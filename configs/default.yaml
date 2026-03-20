@@ -1,0 +1,59 @@
+# GalaxyMorph Default Configuration
+
+# Model configuration
+model:
+  name: "ResNet50"
+  pretrained: true
+  num_classes: 4
+  input_size: 224
+  
+# Training configuration
+training:
+  batch_size: 32
+  num_epochs: 50
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  optimizer: "Adam"
+  loss_fn: "CrossEntropyLoss"
+  num_workers: 4
+  
+# Data augmentation
+augmentation:
+  train:
+    - random_crop: true
+      size: 224
+    - horizontal_flip: true
+      p: 0.5
+    - rotation: true
+      degrees: 15
+    - color_jitter: true
+      brightness: 0.2
+      contrast: 0.2
+      saturation: 0.2
+  
+  val:
+    - center_crop: true
+      size: 224
+
+# Data splits
+data:
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+  
+# Galaxy morphology classes
+classes:
+  0: "Spiral"
+  1: "Elliptical"
+  2: "Lenticular"
+  3: "Irregular"
+
+# Logging and checkpointing
+logging:
+  log_dir: "./logs"
+  checkpoint_dir: "./models"
+  save_frequency: 5  # Save every N epochs
+  
+# Device configuration
+device: "cpu"  # Change to "cuda" when GPU available

@@ -1,0 +1,28 @@
+# PyTorch Core
+torch==2.1.2
+torchvision==0.16.2
+
+# Data & Scientific Computing
+pandas==2.2.0
+numpy==1.26.4
+scikit-learn==1.4.2
+
+# Image Processing
+Pillow==10.2.0
+
+# Visualization
+matplotlib==3.8.3
+
+# Configuration & Utils
+PyYAML==6.0.1
+python-dotenv==1.0.0
+tqdm==4.67.1
+
+# Development & Notebooks
+jupyter==1.0.0
+ipython==8.22.2
+notebook==7.1.2
+
+# Code Quality (optional for development)
+black==24.3.0
+pytest==7.4.4

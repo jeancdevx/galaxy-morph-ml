@@ -1,0 +1,47 @@
+# Dataset configuration for Galaxy Zoo 2
+
+# Data paths (relative to project root)
+dataset:
+  data_dir: './data'
+  images_dir: './data/images/images_gz2/images'
+
+  # Downloaded files from Galaxy Zoo 2
+  images_file: './data/images.zip' # Images dataset archive
+  mapping_file: './data/images/gz2_filename_mapping.csv' # Image to ID mapping
+  metadata_file: './data/gz2_hart16.csv.gz' # Morphology labels
+
+  # Processed dataset
+  processed_dir: './data/processed'
+  final_dataset_file: './data/processed/galaxy_dataset.csv'
+
+# Build options for unified training manifest
+build:
+  min_confidence: 0.40
+  train_split: 0.70
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+
+# Morphology classification
+morphology:
+  classes:
+    - 'Spiral'
+    - 'Elliptical'
+    - 'Lenticular'
+    - 'Irregular'
+
+  # Mapping from Galaxy Zoo 2 labels to our classes
+  # This will be defined during exploratory analysis
+  label_mapping: null
+
+# Image specifications
+images:
+  original_size: [424, 424]
+  channels: 3
+  extension: '.jpg'
+
+# Processing options
+processing:
+  validate_images: true
+  remove_corrupted: true
+  normalize_size: true
