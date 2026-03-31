@@ -93,7 +93,7 @@ def main(
     print(f"✓ Using device: {device}\n")
     
     # Create model
-    num_classes = model_cfg.get("num_classes", 4)
+    num_classes = model_cfg.get("num_classes", 5)
     model = create_model(
         num_classes=num_classes,
         pretrained=model_cfg.get("pretrained", True),
@@ -111,7 +111,7 @@ def main(
     train_loader = get_train_dataloader(
         dataset_file=str(dataset_file),
         batch_size=batch_size,
-        num_workers=training_cfg.get("num_workers", 4),
+        num_workers=training_cfg.get("num_workers", 0),
         input_size=model_cfg.get("input_size", 224),
         balanced=True,
     )
@@ -120,7 +120,7 @@ def main(
     val_loader = get_val_dataloader(
         dataset_file=str(dataset_file),
         batch_size=batch_size,
-        num_workers=training_cfg.get("num_workers", 4),
+        num_workers=training_cfg.get("num_workers", 0),
         input_size=model_cfg.get("input_size", 224),
     )
     print(f"✓ Val loader: {len(val_loader)} batches\n")
@@ -141,7 +141,7 @@ def main(
     print(f"  Weights: {class_weights.cpu().numpy()}\n")
     
     # Setup trainer
-    class_names = ["Spiral", "Elliptical", "Lenticular", "Irregular"]
+    class_names = ["Elliptical", "Spiral", "Barred_Spiral", "Edge_on", "Irregular_Merger"]
     trainer = Trainer(
         model=model,
         train_loader=train_loader,
