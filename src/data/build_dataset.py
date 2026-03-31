@@ -1,17 +1,23 @@
 """Build a unified training dataset manifest for GalaxyMorph.
 
-This script merges:
-- image filename mapping (objid <-> asset_id)
-- Galaxy Zoo metadata table (hart16)
+Uses the `gz2_class` column from Hart et al. (2016) to assign morphological
+labels based on the Hubble-de Vaucouleurs classification scheme.
 
-It outputs a CSV manifest with image paths, labels, and data split.
+5 classes:
+    0 - Elliptical      (gz2_class starts with 'E')
+    1 - Spiral           (gz2_class starts with 'S', not 'SB'/'Se')
+    2 - Barred_Spiral    (gz2_class starts with 'SB')
+    3 - Edge_on          (gz2_class starts with 'Se')
+    4 - Irregular_Merger (gz2_class contains '(i)', '(d)', or '(m)')
+
+Outputs a CSV manifest with image paths, labels, and train/val/test split.
 """
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import pandas as pd
 import yaml
@@ -20,6 +26,56 @@ from sklearn.model_selection import train_test_split
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
+# ── Label scheme ──────────────────────────────────────────────────────────
+
+LABEL_MAP = {
+    "Elliptical": 0,
+    "Spiral": 1,
+    "Barred_Spiral": 2,
+    "Edge_on": 3,
+    "Irregular_Merger": 4,
+}
+
+LABEL_NAMES = {v: k for k, v in LABEL_MAP.items()}
+
+
+def classify_gz2(gz2_class: str) -> Optional[str]:
+    """Map a gz2_class string to one of our 5 morphological labels.
+
+    Priority: Irregular/Merger markers take precedence over base type,
+    because visually these galaxies look irregular regardless of their
+    underlying morphology.
+
+    Args:
+        gz2_class: Classification string from Hart et al. 2016.
+
+    Returns:
+        Label string, or None if the galaxy should be excluded.
+    """
+    cls = str(gz2_class).strip()
+
+    # Exclude artifacts
+    if cls == "A" or cls == "nan" or not cls:
+        return None
+
+    # Irregular/Merger: parenthetical markers
+    if "(i)" in cls or "(d)" in cls or "(m)" in cls:
+        return "Irregular_Merger"
+
+    # Base type from prefix (order matters: SB before S)
+    if cls.startswith("E"):
+        return "Elliptical"
+    if cls.startswith("SB"):
+        return "Barred_Spiral"
+    if cls.startswith("Se"):
+        return "Edge_on"
+    if cls.startswith("S"):
+        return "Spiral"
+
+    return None
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────
 
 def load_yaml(path: Path) -> Dict:
     with path.open("r", encoding="utf-8") as f:
@@ -31,62 +87,70 @@ def resolve_path(path_value: str) -> Path:
     return p if p.is_absolute() else (PROJECT_ROOT / p).resolve()
 
 
-def safe_col(frame: pd.DataFrame, name: str) -> pd.Series:
-    if name in frame.columns:
-        return pd.to_numeric(frame[name], errors="coerce").fillna(0.0)
-    return pd.Series(0.0, index=frame.index)
+# ── Data loading ──────────────────────────────────────────────────────────
 
-
-def build_scores(frame: pd.DataFrame) -> pd.DataFrame:
-    smooth = safe_col(frame, "t01_smooth_or_features_a01_smooth_debiased")
-    features = safe_col(frame, "t01_smooth_or_features_a02_features_or_disk_debiased")
-    edgeon = safe_col(frame, "t02_edgeon_a04_yes_debiased")
-    spiral = safe_col(frame, "t04_spiral_a08_spiral_debiased")
-
-    bulge_noticeable = safe_col(frame, "t05_bulge_prominence_a11_just_noticeable_debiased")
-    bulge_obvious = safe_col(frame, "t05_bulge_prominence_a12_obvious_debiased")
-    bulge_dominant = safe_col(frame, "t05_bulge_prominence_a13_dominant_debiased")
-    bulge_score = (bulge_noticeable + bulge_obvious + bulge_dominant).clip(upper=1.0)
-
-    irregular = safe_col(frame, "t08_odd_feature_a22_irregular_debiased")
-    disturbed = safe_col(frame, "t08_odd_feature_a23_disturbed_debiased")
-    merger = safe_col(frame, "t08_odd_feature_a24_merger_debiased")
-    odd_yes = safe_col(frame, "t06_odd_a14_yes_debiased")
-
-    # Heuristic scores for 4-class setup.
-    frame["score_spiral"] = (features * spiral).clip(lower=0.0, upper=1.0)
-    frame["score_elliptical"] = smooth.clip(lower=0.0, upper=1.0)
-    frame["score_lenticular"] = (features * edgeon * bulge_score).clip(lower=0.0, upper=1.0)
-    frame["score_irregular"] = (
-        odd_yes * pd.concat([irregular, disturbed, merger], axis=1).max(axis=1)
-    ).clip(lower=0.0, upper=1.0)
-
-    return frame
-
-
-def assign_label(frame: pd.DataFrame) -> pd.DataFrame:
-    score_cols = [
-        "score_spiral",
-        "score_elliptical",
-        "score_lenticular",
-        "score_irregular",
-    ]
-    score_to_label = {
-        "score_spiral": "Spiral",
-        "score_elliptical": "Elliptical",
-        "score_lenticular": "Lenticular",
-        "score_irregular": "Irregular",
-    }
-
-    top_score_col = frame[score_cols].idxmax(axis=1)
-    frame["label"] = top_score_col.map(score_to_label)
-    frame["confidence"] = frame[score_cols].max(axis=1)
-    frame["label_idx"] = frame["label"].map(
-        {"Spiral": 0, "Elliptical": 1, "Lenticular": 2, "Irregular": 3}
+def load_sources(
+    mapping_path: Path,
+    metadata_path: Path,
+    images_dir: Path,
+) -> pd.DataFrame:
+    """Load and merge the image mapping and metadata tables."""
+    mapping = pd.read_csv(
+        mapping_path, dtype={"objid": str, "asset_id": str}
+    )
+    metadata = pd.read_csv(
+        metadata_path, compression="infer", dtype={"dr7objid": str}
     )
 
+    if "objid" not in mapping.columns or "asset_id" not in mapping.columns:
+        raise ValueError("Mapping file must contain columns: objid, asset_id")
+    if "dr7objid" not in metadata.columns:
+        raise ValueError("Metadata file must contain column: dr7objid")
+
+    mapping = mapping.rename(columns={"objid": "object_id"})
+    metadata = metadata.rename(columns={"dr7objid": "object_id"})
+
+    # Ensure same dtype for merge
+    mapping["object_id"] = mapping["object_id"].astype(str)
+    metadata["object_id"] = metadata["object_id"].astype(str)
+
+    # Build image path
+    mapping["filename"] = mapping["asset_id"].astype(str) + ".jpg"
+    mapping["image_path"] = mapping["filename"].apply(
+        lambda name: str(images_dir / name)
+    )
+
+    merged = mapping.merge(
+        metadata, on="object_id", how="inner", validate="many_to_one"
+    )
+    return merged
+
+
+# ── Label assignment ──────────────────────────────────────────────────────
+
+def assign_labels(frame: pd.DataFrame) -> pd.DataFrame:
+    """Assign 5-class labels using gz2_class column."""
+    if "gz2_class" not in frame.columns:
+        raise ValueError(
+            "Metadata must contain 'gz2_class' column (from Hart et al. 2016)"
+        )
+
+    frame["label"] = frame["gz2_class"].apply(classify_gz2)
+
+    # Drop unclassifiable rows
+    n_before = len(frame)
+    frame = frame.dropna(subset=["label"]).copy()
+    n_dropped = n_before - len(frame)
+    if n_dropped > 0:
+        print(f"  Dropped {n_dropped:,} unclassifiable rows (artifacts, NaN)")
+
+    # Assign label indices
+    frame["label_idx"] = frame["label"].map(LABEL_MAP)
+
     return frame
 
+
+# ── Splitting ─────────────────────────────────────────────────────────────
 
 def stratified_split(
     frame: pd.DataFrame,
@@ -95,8 +159,9 @@ def stratified_split(
     test_split: float,
     seed: int,
 ) -> pd.DataFrame:
+    """Create stratified train/val/test splits."""
     if round(train_split + val_split + test_split, 6) != 1.0:
-        raise ValueError("train_split + val_split + test_split must be 1.0")
+        raise ValueError("train_split + val_split + test_split must equal 1.0")
 
     train_df, temp_df = train_test_split(
         frame,
@@ -124,24 +189,7 @@ def stratified_split(
     return pd.concat([train_df, val_df, test_df], ignore_index=True)
 
 
-def load_sources(mapping_path: Path, metadata_path: Path, images_dir: Path) -> pd.DataFrame:
-    mapping = pd.read_csv(mapping_path, dtype={"objid": str, "asset_id": str})
-    metadata = pd.read_csv(metadata_path, compression="infer", dtype={"dr7objid": str})
-
-    if "objid" not in mapping.columns or "asset_id" not in mapping.columns:
-        raise ValueError("Mapping file must contain columns: objid, asset_id")
-    if "dr7objid" not in metadata.columns:
-        raise ValueError("Metadata file must contain column: dr7objid")
-
-    mapping = mapping.rename(columns={"objid": "object_id"})
-    metadata = metadata.rename(columns={"dr7objid": "object_id"})
-
-    mapping["filename"] = mapping["asset_id"].astype(str) + ".jpg"
-    mapping["image_path"] = mapping["filename"].apply(lambda name: str(images_dir / name))
-
-    merged = mapping.merge(metadata, on="object_id", how="inner", validate="many_to_one")
-    return merged
-
+# ── Main ──────────────────────────────────────────────────────────────────
 
 def main(config_file: str) -> None:
     cfg = load_yaml(resolve_path(config_file))
@@ -154,46 +202,52 @@ def main(config_file: str) -> None:
     metadata_path = resolve_path(dataset_cfg["metadata_file"])
     output_path = resolve_path(dataset_cfg["final_dataset_file"])
 
-    min_confidence = float(build_cfg.get("min_confidence", 0.40))
     train_split = float(build_cfg.get("train_split", 0.70))
     val_split = float(build_cfg.get("val_split", 0.15))
     test_split = float(build_cfg.get("test_split", 0.15))
     random_seed = int(build_cfg.get("random_seed", 42))
 
+    # ── Validate paths ──
     for path in [images_dir, mapping_path, metadata_path]:
         if not path.exists():
             raise FileNotFoundError(f"Missing required path: {path}")
 
+    # ── Load & merge ──
+    print("Loading data sources...")
     frame = load_sources(mapping_path, metadata_path, images_dir)
+    print(f"  Merged rows: {len(frame):,}")
 
-    frame = build_scores(frame)
-    frame = assign_label(frame)
+    # ── Assign labels from gz2_class ──
+    print("Assigning labels from gz2_class...")
+    frame = assign_labels(frame)
 
-    frame = frame[frame["confidence"] >= min_confidence].copy()
+    # ── Validate images exist ──
+    print("Validating image paths...")
+    n_before = len(frame)
     frame = frame[frame["image_path"].map(lambda p: Path(p).exists())].copy()
+    n_missing = n_before - len(frame)
+    if n_missing > 0:
+        print(f"  Dropped {n_missing:,} rows with missing images")
 
     if frame.empty:
-        raise RuntimeError("No valid samples remained after filtering.")
+        raise RuntimeError("No valid samples after filtering.")
 
-    # Prefer mapping sample name when both mapping and metadata provide it.
-    if "sample_x" in frame.columns:
-        frame = frame.rename(columns={"sample_x": "sample"})
-    elif "sample_y" in frame.columns:
-        frame = frame.rename(columns={"sample_y": "sample"})
-
+    # ── Select output columns ──
     base_cols = [
         "image_path",
         "object_id",
         "asset_id",
+        "gz2_class",
         "label",
         "label_idx",
-        "confidence",
     ]
-    optional_cols = ["sample", "gz2_class", "total_votes"]
+    optional_cols = ["sample", "total_votes"]
     selected_cols = base_cols + [c for c in optional_cols if c in frame.columns]
 
     manifest = frame[selected_cols].copy()
 
+    # ── Stratified split ──
+    print("Creating stratified splits...")
     manifest = stratified_split(
         manifest,
         train_split=train_split,
@@ -202,19 +256,29 @@ def main(config_file: str) -> None:
         seed=random_seed,
     )
 
+    # ── Save ──
     output_path.parent.mkdir(parents=True, exist_ok=True)
     manifest.to_csv(output_path, index=False)
 
-    print(f"Saved unified dataset: {output_path}")
+    # ── Report ──
+    print(f"\n{'='*60}")
+    print(f"Saved: {output_path}")
     print(f"Total samples: {len(manifest):,}")
-    print("Class counts:")
-    print(manifest["label"].value_counts().to_string())
-    print("Split counts:")
+    print(f"\nClass distribution:")
+    for label_name, label_idx in sorted(LABEL_MAP.items(), key=lambda x: x[1]):
+        count = (manifest["label"] == label_name).sum()
+        pct = count / len(manifest) * 100
+        bar = "█" * int(pct / 2)
+        print(f"  {label_idx} {label_name:<20s} {count:>8,}  ({pct:5.1f}%)  {bar}")
+    print(f"\nSplit distribution:")
     print(manifest["split"].value_counts().to_string())
+    print(f"{'='*60}")
 
 
 def parse_args() -> Tuple[str]:
-    parser = argparse.ArgumentParser(description="Build unified GalaxyMorph dataset manifest")
+    parser = argparse.ArgumentParser(
+        description="Build unified GalaxyMorph dataset manifest (5 classes)"
+    )
     parser.add_argument(
         "--config",
         default="configs/dataset.yaml",
