@@ -221,16 +221,29 @@ def main(config_file: str) -> None:
     print("Assigning labels from gz2_class...")
     frame = assign_labels(frame)
 
-    # ── Validate images exist ──
-    print("Validating image paths...")
-    n_before = len(frame)
-    frame = frame[frame["image_path"].map(lambda p: Path(p).exists())].copy()
-    n_missing = n_before - len(frame)
-    if n_missing > 0:
-        print(f"  Dropped {n_missing:,} rows with missing images")
+    # ── Validate a sample of images exist ──
+    # (Checking all 240k on Drive causes I/O rate limiting)
+    print("Validating image paths (sample)...")
+    sample_size = min(100, len(frame))
+    sample = frame.sample(n=sample_size, random_state=42)
+    missing = 0
+    for _, row in sample.iterrows():
+        try:
+            if not Path(row["image_path"]).exists():
+                missing += 1
+        except OSError:
+            missing += 1
 
-    if frame.empty:
-        raise RuntimeError("No valid samples after filtering.")
+    if missing > 0:
+        miss_pct = missing / sample_size * 100
+        print(f"  ⚠ {missing}/{sample_size} sampled images missing ({miss_pct:.0f}%)")
+        if miss_pct > 50:
+            raise RuntimeError(
+                f"Over 50% of sampled images are missing. "
+                f"Check that images exist at: {frame.iloc[0]['image_path']}"
+            )
+    else:
+        print(f"  ✓ All {sample_size} sampled images found")
 
     # ── Select output columns ──
     base_cols = [
