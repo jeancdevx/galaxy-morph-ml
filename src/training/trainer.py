@@ -57,7 +57,7 @@ class Trainer:
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
-        self.class_names = class_names or ["Spiral", "Elliptical", "Lenticular", "Irregular"]
+        self.class_names = class_names or ["Elliptical", "Spiral", "Barred_Spiral", "Edge_on", "Irregular_Merger"]
         
         # History tracking
         self.history = {
