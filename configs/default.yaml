@@ -4,7 +4,7 @@
 model:
   name: 'ResNet50'
   pretrained: true
-  num_classes: 4
+  num_classes: 5
   input_size: 224
 
 # Training configuration
@@ -15,7 +15,7 @@ training:
   weight_decay: 1.0e-5
   optimizer: 'Adam'
   loss_fn: 'CrossEntropyLoss'
-  num_workers: 0 # Set to 0 for Docker, increase for local training
+  num_workers: 0 # Set to 0 for Docker, increase for Colab
 
 # Data augmentation
 augmentation:
@@ -42,12 +42,13 @@ data:
   test_split: 0.15
   random_seed: 42
 
-# Galaxy morphology classes
+# Galaxy morphology classes (5-class Hubble scheme)
 classes:
-  0: 'Spiral'
-  1: 'Elliptical'
-  2: 'Lenticular'
-  3: 'Irregular'
+  0: 'Elliptical'
+  1: 'Spiral'
+  2: 'Barred_Spiral'
+  3: 'Edge_on'
+  4: 'Irregular_Merger'
 
 # Logging and checkpointing
 logging:

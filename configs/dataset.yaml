@@ -8,7 +8,7 @@ dataset:
   # Downloaded files from Galaxy Zoo 2
   images_file: './data/images.zip' # Images dataset archive
   mapping_file: './data/images/gz2_filename_mapping.csv' # Image to ID mapping
-  metadata_file: './data/gz2_hart16.csv.gz' # Morphology labels
+  metadata_file: './data/gz2_hart16.csv.gz' # Morphology labels (Hart et al. 2016)
 
   # Processed dataset
   processed_dir: './data/processed'
@@ -16,23 +16,28 @@ dataset:
 
 # Build options for unified training manifest
 build:
-  min_confidence: 0.40
   train_split: 0.70
   val_split: 0.15
   test_split: 0.15
   random_seed: 42
 
-# Morphology classification
+# Morphology classification — 5 classes from Hubble-de Vaucouleurs diagram
 morphology:
   classes:
-    - 'Spiral'
-    - 'Elliptical'
-    - 'Lenticular'
-    - 'Irregular'
+    0: 'Elliptical'
+    1: 'Spiral'
+    2: 'Barred_Spiral'
+    3: 'Edge_on'
+    4: 'Irregular_Merger'
 
-  # Mapping from Galaxy Zoo 2 labels to our classes
-  # This will be defined during exploratory analysis
-  label_mapping: null
+  # Labeling method: direct mapping from gz2_class column
+  # E*         → Elliptical
+  # S* (¬SB,Se)→ Spiral
+  # SB*        → Barred_Spiral
+  # Se*        → Edge_on
+  # *(i|d|m)   → Irregular_Merger
+  # A          → excluded (artifacts)
+  labeling_method: 'gz2_class_direct'
 
 # Image specifications
 images:
