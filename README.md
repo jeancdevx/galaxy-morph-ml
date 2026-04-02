@@ -1,254 +1,94 @@
 # GalaxyMorph ML
 
-Automatic galaxy morphology classification using Convolutional Neural Networks (CNN).
-
-## 🎯 Project Overview
-
-GalaxyMorph is a machine learning pipeline that classifies galaxy morphology from astronomical images into four categories:
-
-- **Spiral** 🌀
-- **Elliptical** ⭕
-- **Lenticular** 💿
-- **Irregular** 🌌
-
-### Current Phase
-
-We're building the **training pipeline** using:
-
-- **Dataset**: Galaxy Zoo 2
-- **Architecture**: ResNet50 (pretrained backbone)
-- **Framework**: PyTorch
-- **Input**: 424×424×3 astronomical images
-
-## 📁 Project Structure
-
-```
-galaxy-morph-ml/
-├── configs/                 # Configuration files (YAML)
-│   ├── default.yaml        # Default model & training config
-│   └── dataset.yaml        # Dataset paths & specs
-├── data/                   # Dataset directory (gitignored)
-│   ├── images/            # Raw galaxy images
-│   └── processed/         # Processed dataset
-├── logs/                   # Training logs (gitignored)
-├── models/                 # Trained checkpoints (gitignored)
-├── notebooks/              # Jupyter notebooks for exploration
-├── scripts/                # Utility scripts
-├── src/                    # Main source code
-│   ├── config.py          # Configuration loader
-│   ├── data/              # Data loaders & preprocessing
-│   ├── models/            # Model architectures
-│   ├── training/          # Training loops & utilities
-│   ├── evaluation/        # Metrics & evaluation
-│   └── utils/             # Helper functions
-├── tests/                  # Unit tests
-├── Dockerfile             # Docker container definition
-├── docker-compose.yml     # Docker Compose configuration
-├── requirements.txt       # Python dependencies
-├── .gitignore            # Git ignore rules
-└── README.md             # This file
-```
-
-## 🐳 Docker Setup
-
-### Build the Docker Image
-
-```bash
-docker compose build
-```
-
-### Run Interactive Development Shell
-
-```bash
-docker compose run --rm app bash
-```
-
-This will:
-
-- Build the image (if not already built)
-- Mount your workspace into `/app`
-- Start an interactive bash shell
-- Auto-clean up when you exit
-
-### Run a Specific Command in Docker
-
-```bash
-docker compose run --rm app python -c "import torch; print(torch.__version__)"
-```
-
-### Verify Python & Dependencies
-
-Inside the container:
-
-```bash
-# Check Python version
-python --version
-
-# Check PyTorch
-python -c "import torch; print(torch.__version__)"
-
-# Check all dependencies
-python -c "import pandas, numpy, sklearn, PIL, matplotlib, yaml; print('✓ All dependencies OK')"
-```
-
-## 🚀 Quick Start
-
-### 1. **Build and Enter Container**
-
-```bash
-docker compose up -d --build
-docker compose run --rm app bash
-```
-
-### 2. **Verify Environment**
-
-```bash
-# Inside container
-python -c "import torch; print(f'PyTorch: {torch.__version__}')"
-```
-
-### 3. **Configuration**
-
-Edit configuration files in `configs/`:
-
-- `configs/default.yaml` — Model, training, augmentation settings
-- `configs/dataset.yaml` — Dataset paths and specs
-
-### 4. **Next Steps**
-
-After setup, the following components need to be implemented:
-
-- [ ] Data loading pipeline (Galaxy Zoo 2 dataset integration)
-- [ ] Data preprocessing & augmentation
-- [ ] ResNet50 model wrapper
-- [ ] Training loop & loss functions
-- [ ] Evaluation metrics (accuracy, confusion matrix, etc.)
-- [ ] Checkpoint saving & loading
-- [ ] Inference script
-- [ ] Jupyter notebooks for exploration
-
-## 📦 Dependencies
-
-**Core ML**
-
-- `torch` — Deep learning framework
-- `torchvision` — Computer vision utilities
-- `pandas` — Data manipulation
-- `scikit-learn` — Metrics & preprocessing
-- `Pillow` — Image processing
-- `numpy` — Numerical computing
-
-**Utilities**
-
-- `matplotlib` — Visualization
-- `jupyter`, `ipython` — Interactive development
-- `PyYAML` — Configuration files
-- `tqdm` — Progress bars
-- `python-dotenv` — Environment variables
-
-See `requirements.txt` for exact versions.
-
-## ⚙️ Configuration Files
-
-### `configs/default.yaml`
-
-Main configuration for model training:
-
-```yaml
-model:
-  name: ResNet50
-  num_classes: 4
-training:
-  batch_size: 32
-  num_epochs: 50
-  learning_rate: 1.0e-4
-```
-
-### `configs/dataset.yaml`
-
-Dataset paths and specifications:
-
-```yaml
-dataset:
-  data_dir: './data'
-  images_dir: './data/images'
-  final_dataset_file: './data/processed/galaxy_dataset.csv'
-```
-
-## 🔧 Useful Docker Commands
-
-```bash
-# Build image
-docker compose build
-
-# Run with interactive shell
-docker compose run --rm app bash
-
-# Run a Python script
-docker compose run --rm app python src/data/preprocessing.py
-
-# Run Jupyter notebook
-docker compose run --rm -p 8888:8888 app jupyter notebook --ip=0.0.0.0
-
-# View logs
-docker compose logs app
-
-# Remove dangling containers
-docker compose down
-```
-
-## 📝 Development Notes
-
-- **Working Directory**: `/app` inside container (same as project root)
-- **Volumes**: All project directories are mounted, changes persist
-- **Python Path**: `src/` is available as imports via Python path
-- **GPU Support**: Currently CPU-only; update Dockerfile for CUDA support if needed
-
-## 🔄 Workflow
-
-1. **Edit code locally** (outside container)
-2. **Run in Docker** (all commands)
-3. **View output** (logs, models, artifacts)
-4. **Iterate** on data/models
-
-For notebooks:
-
-```bash
-docker compose run --rm -p 8888:8888 app jupyter notebook --ip=0.0.0.0 --allow-root
-```
-
-Then open: `http://localhost:8888`
-
-## 🤝 Contributing
-
-- Maintain Python 3.11 compatibility
-- Follow PEP 8 style guidelines
-- Update `requirements.txt` when adding dependencies
-- Document new modules with docstrings
-- Add tests for new functionality
-
-## 📊 Galaxy Morphology Classes
-
-The four classifications we're targeting:
-
-1. **Spiral** — Rotating disk with spiral arms
-2. **Elliptical** — Smooth, featureless ellipsoidal shape
-3. **Lenticular** — Disk with prominent bulge but no spiral arms
-4. **Irregular** — Chaotic, asymmetric structure
-
-## 📚 Resources
-
-- [Galaxy Zoo 2 Dataset](https://www.zooniverse.org/projects/galaxyzoo/galaxy-zoo-2)
-- [ResNet Paper](https://arxiv.org/abs/1512.03385)
-- [PyTorch Documentation](https://pytorch.org/docs)
-- [Torchvision Models](https://pytorch.org/vision/stable/models.html)
-
-## 📄 License
-
-[To be defined]
+Clasificación automática de morfología galáctica utilizando Redes Neuronales Convolucionales (CNN) basada en el esquema de Hubble-de Vaucouleurs.
 
 ---
 
-**Status**: 🚧 Environment Setup Complete - Ready for Development
+## 🎯 Descripción General
 
-Next milestone: Data preprocessing & EDA
+**GalaxyMorph** es un proyecto de tesis enfocado en utilizar el aprendizaje profundo (Deep Learning) y la percepción computacional para clasificar galaxias a partir de imágenes astronómicas reales. 
+
+El modelo emula el consenso de cientos de miles de voluntarios de [Galaxy Zoo 2](https://data.galaxyzoo.org/), analizando patrones visuales complejos como brazos espirales, barras centrales y bulbos difusos, de manera completamente automática y escalable.
+
+## 🎯 Objetivos del Proyecto
+
+1. **Clasificación automatizada:** Construir un modelo robusto que prediga la morfología de una galaxia con alta precisión sin intervención humana.
+2. **Definición taxonómica estricta:** Utilizar los datos astronómicos de Hart et al. (2016) para asegurar que la "verdad base" (Ground Truth) sea científicamente precisa.
+3. **Escalabilidad en Producción:** Sentar las bases en PyTorch (`.pt`) para posteriormente montar un clasificador distribuido capaz de procesar miles de imágenes por segundo usando Apache Spark y Kafka en una arquitectura de microservicios.
+
+---
+
+## 🌌 ¿Qué clasificamos? (Las 5 Clases)
+
+A diferencia de proyectos de prueba que usan solo 3 clases u omiten los detalles técnicos, esta arquitectura clasifica las galaxias en las **5 categorías principales** de la secuencia de Hubble presentes en el árbol de decisiones de Galaxy Zoo 2.
+
+Utilizamos la cadena de consenso `gz2_class` para definir matemáticamente las etiquetas:
+
+1. ⭕ **Elliptical (Smooth):** Galaxias de población estelar vieja, de forma suave, sin disco visible ni polvo. *(Consenso inicia con `E`)*.
+2. 🌀 **Spiral:** Galaxias con un disco brillante visto de frente y brazos espirales claramente visibles. *(Consenso inicia con `S`, sin barra)*.
+3. ➖ **Barred_Spiral:** Galaxias espirales que presentan una estructura elongada (barra) de estrellas atravesando su núcleo. *(Consenso inicia con `SB`)*.
+4. 🛸 **Edge_on:** Galaxias de disco que estamos viendo de canto/perfil desde la Tierra. Sus brazos no son visibles, pero el polvo intergaláctico crea una línea oscura que parte el disco. *(Consenso inicia con `Se`)*.
+5. 💥 **Irregular_Merger:** Galaxias con formas asimétricas o caóticas, comúnmente causadas por el choque gravitacional de dos galaxias (Mergers) o perturbaciones severas. *(Consenso marcado con `(i)`, `(m)`, o `(d)`)*.
+
+---
+
+## 📊 Dataset y Origen de Datos
+
+El entrenamiento se sustenta en los datos del segundo relanzamiento del proyecto **Galaxy Zoo 2**. Toda la información de Kaggle o descargas no oficiales se descartó para mantener la rigurosidad científica.
+
+### Archivos clave:
+- **`gz2_hart16.csv`**: El catálogo de Hart et al. (2016). Aquí residen las respuestas al árbol de decisión de GZ2 y la importantísima columna `gz2_class`.
+- **`gz2_filename_mapping.csv`**: Tabla relacional que une el identificador astronómico (`objid`) con el nombre del archivo `.jpg` en disco.
+- **Imágenes (`images_gz2/images/`)**: ~240,000 recortes a color en formato JPG de $424 \times 424$ obtenidos originalmente del telescopio Sloan Digital Sky Survey (SDSS). Todo nuestro repositorio se conecta con Google Drive / R2 para no albergarlas en git.
+
+---
+
+## ⚙️ Flujo Completo del Aprendizaje (Arquitectura)
+
+Desde que la foto del satélite entra al disco duro hasta que sale una predicción, ocurre el siguiente proceso (End-to-End Learning):
+
+### 1. Construcción del Manifest (`build_dataset.py`)
+El script cruza las tablas SQL usando Pandas, limpia errores de datos y artefactos (galaxias invisibles o corruptas). Verifica que los archivos existan en el sistema y estratifica equitativamente los datos en:
+*   **Train (80%)**: Donde la red ajusta sus pesos.
+*   **Validation (10%)**: Donde verificamos que no esté memorizando (Overfitting).
+*   **Test (10%)**: Muestra sagrada que usamos al final del proyecto para reportar la precisión final.
+
+### 2. Preprocesamiento In-Memory (DataLoaders)
+La red nunca ve el JPG limpio. En las transformaciones (usando `torchvision`) suceden 4 cosas:
+*   **Resize y CenterCrop:** La imagen de $424 \times 424$ se escala un poco y se recorta un bloque perfecto de **$224 \times 224$** enfocándose justo en la galaxia (eliminando ruido negro de los bordes).
+*   **Data Augmentation:** Aleatoriamente la foto se gira $\pm 15^\circ$, se invierte como en un espejo o recibe un ajuste de brillo. Esto fuerza al modelo a "aprender astronomía", dictando que una barra espiral de cabeza sigue siendo una barra espiral.
+*   **ToTensor & Normalize:** Se convierte a decimales `float32` y se aplican promedios estadísticos estrictos de ImageNet para balancear la luz de la imagen con lo que la arquitectura ResNet espera ver.
+
+### 3. La Red Neuronal: ResNet50
+Se eligió la profunda **Residual Network de 50 capas (ResNet50)**.
+*   La imagen entra como un tensor de `[3, 224, 224]` (3 canales RGB).
+*   Va cruzando decenas de filtros convolucionales que extraen desde simples bordes (Capas iniciales) hasta detectar las barras brillantes (Capas medias) y los difusos brazos espirales azules (Capas profundas).
+*   A diferencia de redes más viejas (como VGG o AlexNet), la estructura "Residual" (conexiones de salto) permite que una señal matemática atraviese 50 capas sin degradarse.
+
+### 4. Head de Salida
+Se corta la capa final original de ResNet50 que reconocía perros/gatos, y ponemos una capa *Fully Connected (Linear)* de **frente a nuestras 5 clases**. Se aplica una función `CrossEntropyLoss` ponderada temporalmente durante el entrenamiento para compensar que el universo tiene más galaxias espirales que irregulares.
+
+Finalmente obtenemos una distribución softmax (`[1%, 2%, 91%, 3%, 3%]`). Para inferencia, el número más grande es la ganadora absoluta.
+
+---
+
+## 🚀 Entornos de Ejecución
+
+El código está estructurado para ejecutarse modularmente en dos entornos diferentes:
+
+### 1. Desarrollo Local (Docker Cpu/Experimentación)
+En la PC del desarrollador usando `docker-compose up --build`. No entrena (muy lento sin GPU local), pero sirve para correr debuggers, compilar el dataset, o graficar imágenes.
+*   *Comando de arranque:* `docker compose run --rm app bash`
+
+### 2. Entrenamiento en la Nube (Google Colab - GPU)
+Para el entrenamiento real, el proyecto usa un modelo híbrido: Clona este código fuente en Colab para usar la máquina gráfica gratuita (**Tesla T4, 15GB VRAM**), pero monta los datos y resultados directo en la nube (Drive) usando symlinks. Así se entrena rápido sin pagar servidores hipercaros o perder los `.pt` cuando las sesiones gratuitas expiran.
+*   *Archivo:* `notebooks/train_colab_t4.ipynb`
+
+## 📦 Tecnologías y Librerías Base
+*   **Core DL**: `PyTorch`, `torchvision`
+*   **Data Handling**: `Pandas`, `Numpy`
+*   **Metrics**: `Scikit-learn`
+*   **Deployment**: `Docker`
+
+---
+*Galaxymorph - 2026. Explorando el universo con Inteligencia Artificial.*
