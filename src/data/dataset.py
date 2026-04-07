@@ -67,24 +67,28 @@ class GalaxyMorphDataset(Dataset):
             f"from {self.dataset_file}"
         )
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self.manifest)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
-        row = self.manifest.iloc[idx]
+    def __getitem__(self, idx):
+        import random
+        while True:
+            row = self.manifest.iloc[idx]
+            original_path = Path(str(row["image_path"]))
+            
+            # Forzamos nombre de ruta local
+            image_name = original_path.name
+            image_path = Path(LOCAL_IMAGES_DIR) / image_name
+            
+            try:
+                image = Image.open(image_path).convert("RGB")
+                break
+            except (FileNotFoundError, OSError):
+                idx = random.randint(0, len(self.manifest) - 1)
 
-        # Load image
-        image_path = Path(row["image_path"])
-        image = Image.open(image_path).convert("RGB")
-
-        # Apply transforms
         if self.transform:
             image = self.transform(image)
-
-        # Get label index
-        label_idx = int(row["label_idx"])
-
-        return image, label_idx
+        return image, int(row["label_idx"])
 
 
 def get_train_transforms(input_size: int = 224) -> transforms.Compose:
