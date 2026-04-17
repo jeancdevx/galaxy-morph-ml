@@ -53,6 +53,48 @@ El entrenamiento se sustenta en los datos del segundo relanzamiento del proyecto
 
 ---
 
+## 🔄 Evolución del Modelo: De ResNet50 a Arquitectura Híbrida
+
+### v1 — ResNet50 (descartado)
+
+La primera versión del modelo usaba **ResNet50** pretrained en ImageNet como backbone único, con una capa FC de salida para 5 clases.
+
+**Problema detectado:** Overfitting severo a partir de la epoch 25:
+
+```
+Epoch 25: Train Loss: 0.48  Val Loss: 0.72  ← gap se abre
+Epoch 30: Train Loss: 0.31  Val Loss: 0.95  ← memorización
+Epoch 35: Train Loss: 0.21  Val Loss: 1.24  ← colapso de generalización
+```
+
+| Causa del overfitting | Detalle |
+|----------------------|----------|
+| **Demasiados parámetros** | ResNet50 tiene 25.6M params para ~167K imágenes de entrenamiento |
+| **Arquitectura monolítica** | Una CNN sola no modela relaciones espaciales globales |
+| **Sin regularización suficiente** | No había label smoothing, mixup ni gradient clipping |
+
+Puedes ver el experimento original en: [Kaggle v1 — ResNet50](https://www.kaggle.com/code/jeancdevx/galaxymorph-cnn-for-classifying-galaxy-morphology)
+
+### v2 — GalaxyMorphHybrid (actual)
+
+La migración a una arquitectura híbrida **EfficientNet-B0 + Transformer Encoder** resuelve los problemas del ResNet50:
+
+| Problema (v1) | Solución (v2) |
+|---------------|---------------|
+| 25.6M params → overfit | **10.9M params** (~57% menos, menos riesgo de memorización) |
+| CNN no ve el contexto global | **Transformer Encoder** relaciona las 49 regiones espaciales de la galaxia entre sí |
+| Sin regularización | Label smoothing + MixUp + Dropout + Weight Decay + Early Stopping |
+| Todos los pesos se entrenan desde epoch 1 | **Two-phase fine-tuning:** backbone congelado primero, descongelado gradual después |
+| Augmentation básica | Augmentation agresiva aprovechando simetría rotacional galáctica |
+
+**¿Por qué EfficientNet-B0 y no ResNet50 o EfficientNet-B1?**
+- **vs ResNet50:** EfficientNet-B0 logra mayor precisión con 5.3M params (vs 23.5M del backbone ResNet50) usando compound scaling
+- **vs EfficientNet-B1:** B1 tiene ~7.8M params en el backbone — más VRAM, más lento, y el Transformer ya compensa la capacidad extra
+
+Puedes ver el experimento actual en: [Kaggle v2 — Hybrid CNN+Transformer](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology)
+
+---
+
 ## ⚙️ Arquitectura del Modelo: GalaxyMorphHybrid
 
 La arquitectura actual es un **modelo híbrido CNN + Transformer** que combina la eficiencia de EfficientNet-B0 para extraer features locales con la capacidad del Transformer Encoder para capturar relaciones espaciales globales entre regiones de la galaxia.
@@ -193,10 +235,14 @@ docker compose run --rm app bash
 
 ### 2. Entrenamiento en Kaggle (2× GPU T4)
 
-El entrenamiento real se realiza en Kaggle usando la notebook:
-**`notebooks/galaxymorph-cnn-for-classifying-galaxy-morphology.ipynb`**
+El entrenamiento real se realiza en Kaggle. Hay dos notebooks en la historia del proyecto:
 
-La notebook es self-contained — no depende de archivos `src/` externos.
+| Notebook | Modelo | Estado |
+|----------|--------|--------|
+| [v1 — ResNet50](https://www.kaggle.com/code/jeancdevx/galaxymorph-cnn-for-classifying-galaxy-morphology) | ResNet50 tradicional | ⚠️ Descartado (overfit epoch 25) |
+| [v2 — Hybrid CNN+Transformer](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology) | EfficientNet-B0 + Transformer Encoder | ✅ Actual |
+
+La notebook activa es self-contained — no depende de archivos `src/` externos.
 
 ```
 Configuración Kaggle:
@@ -205,8 +251,6 @@ Configuración Kaggle:
   DataParallel: activado automáticamente si hay 2 GPUs
 ```
 
-Puedes ver el proceso en: [Kaggle Notebook GalaxyMorph](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology)
-
 ---
 
 ## 📁 Estructura del Proyecto
@@ -214,7 +258,8 @@ Puedes ver el proceso en: [Kaggle Notebook GalaxyMorph](https://www.kaggle.com/c
 ```
 galaxy-morph-ml/
 ├── notebooks/
-│   └── galaxymorph-cnn-for-classifying-galaxy-morphology.ipynb  ← Entrenamiento principal
+│   ├── galaxymorph-cnn-for-classifying-galaxy-morphology.ipynb  ← v1 ResNet50 (legacy)
+│   └── hybrid-cnn-transformer-for-galaxy-morphology.ipynb       ← v2 Hybrid (actual)
 ├── src/
 │   ├── data/
 │   │   └── build_dataset.py       ← Construcción del manifest CSV
