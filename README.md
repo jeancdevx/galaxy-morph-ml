@@ -1,14 +1,14 @@
 # GalaxyMorph ML
 
-Clasificación automática de morfología galáctica utilizando Redes Neuronales Convolucionales (CNN) basada en el esquema de Hubble-de Vaucouleurs.
+Clasificación automática de morfología galáctica usando una arquitectura híbrida **CNN + Transformer Encoder** basada en el esquema de Hubble-de Vaucouleurs.
 
 ---
 
 ## 🎯 Descripción General
 
-**GalaxyMorph** es un proyecto de tesis enfocado en utilizar el aprendizaje profundo (Deep Learning) y la percepción computacional para clasificar galaxias a partir de imágenes astronómicas reales.
+**GalaxyMorph** es un proyecto de tesis enfocado en utilizar el aprendizaje profundo (Deep Learning) para clasificar galaxias a partir de imágenes astronómicas reales del [Galaxy Zoo 2](https://data.galaxyzoo.org/).
 
-El modelo emula el consenso de cientos de miles de voluntarios de [Galaxy Zoo 2](https://data.galaxyzoo.org/), analizando patrones visuales complejos como brazos espirales, barras centrales y bulbos difusos, de manera completamente automática y escalable.
+El modelo emula el consenso de cientos de miles de voluntarios, analizando patrones visuales complejos como brazos espirales, barras centrales y bulbos difusos, de manera completamente automática y escalable.
 
 ## 🎯 Objetivos del Proyecto
 
@@ -20,91 +20,239 @@ El modelo emula el consenso de cientos de miles de voluntarios de [Galaxy Zoo 2]
 
 ## 🌌 ¿Qué clasificamos? (Las 5 Clases)
 
-A diferencia de proyectos de prueba que usan solo 3 clases u omiten los detalles técnicos, esta arquitectura clasifica las galaxias en las **5 categorías principales** de la secuencia de Hubble presentes en el árbol de decisiones de Galaxy Zoo 2.
+Clasificamos galaxias en las **5 categorías principales** de la secuencia de Hubble presentes en el árbol de decisiones de Galaxy Zoo 2. Utilizamos la cadena de consenso `gz2_class` para definir matemáticamente las etiquetas:
 
-Utilizamos la cadena de consenso `gz2_class` para definir matemáticamente las etiquetas:
-
-1. ⭕ **Elliptical (Smooth):** Galaxias de población estelar vieja, de forma suave, sin disco visible ni polvo. _(Consenso inicia con `E`)_.
-2. 🌀 **Spiral:** Galaxias con un disco brillante visto de frente y brazos espirales claramente visibles. _(Consenso inicia con `S`, sin barra)_.
-3. ➖ **Barred_Spiral:** Galaxias espirales que presentan una estructura elongada (barra) de estrellas atravesando su núcleo. _(Consenso inicia con `SB`)_.
-4. 🛸 **Edge_on:** Galaxias de disco que estamos viendo de canto/perfil desde la Tierra. Sus brazos no son visibles, pero el polvo intergaláctico crea una línea oscura que parte el disco. _(Consenso inicia con `Se`)_.
-5. 💥 **Irregular_Merger:** Galaxias con formas asimétricas o caóticas, comúnmente causadas por el choque gravitacional de dos galaxias (Mergers) o perturbaciones severas. _(Consenso marcado con `(i)`, `(m)`, o `(d)`)_.
+| # | Clase | Descripción | Consenso `gz2_class` |
+|---|-------|-------------|----------------------|
+| 0 | ⭕ **Elliptical** | Galaxias de población estelar vieja, forma suave sin disco ni polvo | Inicia con `E` |
+| 1 | 🌀 **Spiral** | Galaxias con disco brillante de frente y brazos espirales visibles | Inicia con `S` (sin barra) |
+| 2 | ➖ **Barred_Spiral** | Espirales con una estructura elongada (barra) atravesando el núcleo | Inicia con `SB` |
+| 3 | 🛸 **Edge_on** | Galaxias de disco vistas de canto/perfil, con línea de polvo visible | Inicia con `Se` |
+| 4 | 💥 **Irregular_Merger** | Galaxias asimétricas o caóticas por colisiones o perturbaciones | Marcado con `(i)`, `(m)` o `(d)` |
 
 ---
 
 ## 📊 Dataset y Origen de Datos
 
-El entrenamiento se sustenta en los datos del segundo relanzamiento del proyecto **Galaxy Zoo 2**. Toda la información de Kaggle o descargas no oficiales se descartó para mantener la rigurosidad científica.
+El entrenamiento se sustenta en los datos del segundo relanzamiento del proyecto **Galaxy Zoo 2**. Toda información de Kaggle o descargas no oficiales se descartó para mantener rigurosidad científica.
 
-### Archivos clave:
+### Archivos clave
 
-- **`gz2_hart16.csv`**: El catálogo de Hart et al. (2016). Aquí residen las respuestas al árbol de decisión de GZ2 y la importantísima columna `gz2_class`.
+- **`gz2_hart16.csv`**: Catálogo de Hart et al. (2016) con las respuestas al árbol de decisión de GZ2 y la columna `gz2_class`.
 - **`gz2_filename_mapping.csv`**: Tabla relacional que une el identificador astronómico (`objid`) con el nombre del archivo `.jpg` en disco.
-- **Imágenes (`images_gz2/images/`)**: ~240,000 recortes a color en formato JPG de $424 \times 424$ obtenidos originalmente del telescopio Sloan Digital Sky Survey (SDSS). Todo nuestro repositorio se conecta con Google Drive / R2 para no albergarlas en git.
+- **Imágenes (`images_gz2/images/`)**: ~240,000 recortes a color en formato JPG de $424 \times 424$ obtenidos del telescopio Sloan Digital Sky Survey (SDSS).
+
+### Estadísticas del Dataset
+
+| Split | Muestras |
+|-------|----------|
+| Train | ~167,321 (80%) |
+| Val   | ~35,854 (10%) |
+| Test  | ~35,854 (10%) |
+| **Total** | **~239,029** |
 
 ---
 
-## ⚙️ Flujo Completo del Aprendizaje (Arquitectura)
+## ⚙️ Arquitectura del Modelo: GalaxyMorphHybrid
 
-Desde que la foto del satélite entra al disco duro hasta que sale una predicción, ocurre el siguiente proceso (End-to-End Learning):
+La arquitectura actual es un **modelo híbrido CNN + Transformer** que combina la eficiencia de EfficientNet-B0 para extraer features locales con la capacidad del Transformer Encoder para capturar relaciones espaciales globales entre regiones de la galaxia.
 
-### 1. Construcción del Manifest (`build_dataset.py`)
+### ¿Por qué híbrida?
 
-El script cruza las tablas SQL usando Pandas, limpia errores de datos y artefactos (galaxias invisibles o corruptas). Verifica que los archivos existan en el sistema y estratifica equitativamente los datos en:
+| Componente | Rol | Por qué |
+|------------|-----|---------|
+| **EfficientNet-B0** (CNN) | Extractor de features locales | Detecta bordes, texturas, patrones de brazos espirales, barras |
+| **Transformer Encoder** | Relaciones espaciales globales | Relaciona tokens de diferentes regiones: "¿el brazo izquierdo se corresponde con el derecho?" |
+| **Combinación** | Lo mejor de ambos | CNN sola no ve el conjunto; Transformer solo sin CNN pierde precisión local |
 
-- **Train (80%)**: Donde la red ajusta sus pesos.
-- **Validation (10%)**: Donde verificamos que no esté memorizando (Overfitting).
-- **Test (10%)**: Muestra sagrada que usamos al final del proyecto para reportar la precisión final.
+**Ventaja clave sobre ResNet50 anterior:** ~11M parámetros vs ~25.6M. Menos parameters = menos riesgo de memorización (overfitting).
 
-### 2. Preprocesamiento In-Memory (DataLoaders)
+### Flujo de datos
 
-La red nunca ve el JPG limpio. En las transformaciones (usando `torchvision`) suceden 4 cosas:
+```
+Imagen (3, 224, 224)
+        │
+        ▼
+┌─────────────────────────────────┐
+│   EfficientNet-B0 (backbone)   │  52 capas, pretrained ImageNet
+│   features: (B, 1280, 7, 7)   │  detecta features locales
+└─────────────────────────────────┘
+        │  flatten + transpose
+        ▼
+   Tokens: (B, 49, 1280)        ← 49 regiones de 7×7 de la imagen
+        │  Linear projection
+        ▼
+   Tokens: (B, 49, 512)  + Positional Encoding (learnable)
+        │
+        ▼
+┌─────────────────────────────────┐
+│   Transformer Encoder          │  2 capas, 8 heads, dim=512
+│   Self-Attention global        │  relaciona las 49 regiones entre sí
+└─────────────────────────────────┘
+        │  Global Average Pool (mean over 49 tokens)
+        ▼
+   Vector: (B, 512)
+        │
+        ▼
+┌─────────────────────────────────┐
+│   Classification Head          │  LayerNorm → Dropout(0.5) → Linear(512→5)
+└─────────────────────────────────┘
+        │
+        ▼
+   Logits: (B, 5)  →  softmax  →  clase predicha
+```
 
-- **Resize y CenterCrop:** La imagen de $424 \times 424$ se escala un poco y se recorta un bloque perfecto de **$224 \times 224$** enfocándose justo en la galaxia (eliminando ruido negro de los bordes).
-- **Data Augmentation:** Aleatoriamente la foto se gira $\pm 15^\circ$, se invierte como en un espejo o recibe un ajuste de brillo. Esto fuerza al modelo a "aprender astronomía", dictando que una barra espiral de cabeza sigue siendo una barra espiral.
-- **ToTensor & Normalize:** Se convierte a decimales `float32` y se aplican promedios estadísticos estrictos de ImageNet para balancear la luz de la imagen con lo que la arquitectura ResNet espera ver.
+### Parámetros
 
-### 3. La Red Neuronal: ResNet50
+| Componente | Params |
+|------------|--------|
+| EfficientNet-B0 (backbone) | ~5.3M |
+| Projection + Positional Encoding | ~0.7M |
+| Transformer Encoder (2 capas) | ~4.7M |
+| Classification Head | ~0.3M |
+| **Total** | **~10.9M** |
 
-Se eligió la profunda **Residual Network de 50 capas (ResNet50)**.
+---
 
-- La imagen entra como un tensor de `[3, 224, 224]` (3 canales RGB).
-- Va cruzando decenas de filtros convolucionales que extraen desde simples bordes (Capas iniciales) hasta detectar las barras brillantes (Capas medias) y los difusos brazos espirales azules (Capas profundas).
-- A diferencia de redes más viejas (como VGG o AlexNet), la estructura "Residual" (conexiones de salto) permite que una señal matemática atraviese 50 capas sin degradarse.
+## 🏋️ Estrategia de Entrenamiento
 
-### 4. Head de Salida
+### Two-Phase Fine-tuning (Gradual Unfreezing)
 
-Se corta la capa final original de ResNet50 que reconocía perros/gatos, y ponemos una capa _Fully Connected (Linear)_ de **frente a nuestras 5 clases**. Se aplica una función `CrossEntropyLoss` ponderada temporalmente durante el entrenamiento para compensar que el universo tiene más galaxias espirales que irregulares.
+El entrenamiento se divide en 2 fases para evitar que los gradientes ruidosos del inicio corrompan los pesos pretrained de ImageNet:
 
-Finalmente obtenemos una distribución softmax (`[1%, 2%, 91%, 3%, 3%]`). Para inferencia, el número más grande es la ganadora absoluta.
+#### Fase 1 — Backbone Congelado (Epochs 1-10)
+
+```
+Backbone EfficientNet: 🧊 FROZEN (no se actualiza)
+Transformer + Head:    🔥 ENTRENANDO (~6.9M params)
+LR: warmup lineal 3e-5 → 1e-4 → cosine decay
+```
+
+El Transformer aprende a interpretar las features del backbone sin perturbarlo.
+
+#### Fase 2 — Descongelado Parcial (Epochs 11-40)
+
+```
+Backbone (bloques 0-5): 🧊 FROZEN
+Backbone (bloques 6-8): 🔥 LR bajo = 1e-5  (~3.1M extra params)
+Transformer + Head:     🔥 LR normal = 1e-4
+MixUp (alpha=0.2):      activado
+```
+
+Solo los últimos 3 bloques del backbone (los más específicos del dominio) se adaptan a galaxias.
+
+### Regularización Anti-Overfitting
+
+| Técnica | Valor | Propósito |
+|---------|-------|-----------|
+| **Label Smoothing** | 0.1 | Evita confianza excesiva en etiquetas |
+| **Weight Decay** | 1e-3 | L2 regularization en AdamW |
+| **Dropout** | 0.5 (head), 0.3 (transformer) | Apagado aleatorio de neuronas |
+| **MixUp** | α=0.2 (solo Fase 2) | Mezcla imágenes para generalizar |
+| **Grad Clipping** | max_norm=1.0 | Evita gradient explosion |
+| **Early Stopping** | patience=7 | Para cuando Val F1 no mejora |
+
+### Augmentation Agresiva (aprovecha simetría galáctica)
+
+Las galaxias son simétricas rotacionalmente — una espiral girada 90° sigue siendo una espiral:
+
+```python
+RandomResizedCrop(224, scale=(0.5, 1.0))  # zoom variable
+RandomHorizontalFlip(p=0.5)               # espejo horizontal
+RandomVerticalFlip(p=0.5)                 # espejo vertical
+RandomRotation(degrees=180)               # rotación completa
+ColorJitter(brightness, contrast, ...)    # variación de brillo/color
+GaussianBlur(kernel_size=3)              # simula diferentes telescopios
+RandomErasing(p=0.25)                    # oculta regiones aleatorias
+```
+
+### Hiperparámetros
+
+| Parámetro | Valor |
+|-----------|-------|
+| Batch Size | 128 |
+| Epochs máximos | 40 |
+| Learning Rate (head) | 1e-4 |
+| Learning Rate (backbone P2) | 1e-5 |
+| Warmup Epochs | 3 |
+| Optimizer | AdamW |
+| Loss | CrossEntropyLoss (weighted + label smoothing) |
+| Scheduler | Linear warmup → Cosine decay |
 
 ---
 
 ## 🚀 Entornos de Ejecución
 
-El código está estructurado para ejecutarse modularmente en dos entornos diferentes:
+### 1. Desarrollo Local (Docker — Experimentación sin GPU)
 
-### 1. Desarrollo Local (Docker Cpu/Experimentación)
+```bash
+docker compose run --rm app bash
+```
 
-En la PC del desarrollador usando `docker-compose up --build`. No entrena (muy lento sin GPU local), pero sirve para correr debuggers, compilar el dataset, o graficar imágenes.
+Útil para construir el dataset, depurar código y graficar imágenes. No entrena (sin GPU local).
 
-- _Comando de arranque:_ `docker compose run --rm app bash`
+### 2. Entrenamiento en Kaggle (2× GPU T4)
 
-### 2. Entrenamiento en la Nube (Kaggle - 2 GPU T4)
+El entrenamiento real se realiza en Kaggle usando la notebook:
+**`notebooks/galaxymorph-cnn-for-classifying-galaxy-morphology.ipynb`**
 
-Para el entrenamiento real, el proyecto usa un modelo híbrido. En caso cuentes con una grafica local potente, puedes entrenar ahí. Pero para la mayoría, el entrenamiento se realiza en Kaggle (con 2 GPU T4) haciendo uso de la notebook `galaxymorph-cnn-for-classifying-galaxy-morphology.ipynb`. El código de entrenamiento es idéntico al local, pero con rutas adaptadas a la estructura de Kaggle.
+La notebook es self-contained — no depende de archivos `src/` externos.
 
-Para este caso ya dejamos una notebook con un modelo entrenado y guardado en Kaggle, puedes hacer cualquier experimento o análisis adicional partiendo de ese checkpoint.
+```
+Configuración Kaggle:
+  Accelerator: GPU T4 x2
+  Runtime:     Save & Run All (Commit) — hasta 12h
+  DataParallel: activado automáticamente si hay 2 GPUs
+```
 
-Puedes revisar la notebook [GalaxyMorph](https://www.kaggle.com/code/jeancdevx/galaxymorph-cnn-for-classifying-galaxy-morphology) para ver el proceso de entrenamiento, validación y evaluación del modelo.
-
-## 📦 Tecnologías y Librerías Base
-
-- **Core DL**: `PyTorch`, `torchvision`
-- **Data Handling**: `Pandas`, `Numpy`
-- **Metrics**: `Scikit-learn`
-- **Deployment**: `Docker`
+Puedes ver el proceso en: [Kaggle Notebook GalaxyMorph](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology)
 
 ---
 
-_Galaxymorph - 2026. Explorando el universo con Inteligencia Artificial._
+## 📁 Estructura del Proyecto
+
+```
+galaxy-morph-ml/
+├── notebooks/
+│   └── galaxymorph-cnn-for-classifying-galaxy-morphology.ipynb  ← Entrenamiento principal
+├── src/
+│   ├── data/
+│   │   └── build_dataset.py       ← Construcción del manifest CSV
+│   └── models/                    ← Definiciones de modelos (legacy)
+├── configs/                       ← Configuraciones YAML
+├── logs/
+│   └── training_history.json      ← Historial de métricas por época
+├── models/                        ← Checkpoints guardados (.pt)
+├── tests/                         ← Tests unitarios
+├── galaxymorph_knowledge_base.md  ← Documentación técnica extendida
+├── cnn-architecture.md            ← Diagrama detallado de arquitectura
+└── requirements.txt
+```
+
+---
+
+## 📦 Tecnologías y Librerías
+
+| Categoría | Librería |
+|-----------|----------|
+| **Core DL** | `PyTorch`, `torchvision` |
+| **Backbone** | EfficientNet-B0 (pretrained ImageNet) |
+| **Data** | `Pandas`, `NumPy` |
+| **Métricas** | `Scikit-learn` (F1, Accuracy, Confusion Matrix) |
+| **Visualización** | `Matplotlib`, `Seaborn` |
+| **Deployment** | `Docker` |
+
+---
+
+## 📈 Resultados
+
+> ⚠️ Entrenamiento en curso con la nueva arquitectura híbrida. Los resultados se actualizarán al finalizar.
+
+| Modelo | Val F1 (macro) | Val Accuracy | Params | Estado |
+|--------|---------------|--------------|--------|--------|
+| ResNet50 (baseline) | 0.6939 | ~0.71 | 25.6M | Overfit severo (epoch 25+) |
+| **GalaxyMorphHybrid** | _en curso_ | _en curso_ | 10.9M | ✅ En entrenamiento |
+
+---
+
+_GalaxyMorph — 2026. Explorando el universo con Inteligencia Artificial._
