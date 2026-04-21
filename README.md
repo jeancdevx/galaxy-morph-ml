@@ -46,9 +46,9 @@ El entrenamiento se sustenta en los datos del segundo relanzamiento del proyecto
 
 | Split | Muestras |
 |-------|----------|
-| Train | ~167,321 (80%) |
-| Val   | ~35,854 (10%) |
-| Test  | ~35,854 (10%) |
+| Train | ~167,321 (70%) |
+| Val   | ~35,854 (15%) |
+| Test  | ~35,854 (15%) |
 | **Total** | **~239,029** |
 
 ---
