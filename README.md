@@ -75,138 +75,82 @@ Epoch 35: Train Loss: 0.21  Val Loss: 1.24  ← colapso de generalización
 
 Puedes ver el experimento original en: [Kaggle v1 — ResNet50](https://www.kaggle.com/code/jeancdevx/galaxymorph-cnn-for-classifying-galaxy-morphology)
 
-### v2 — GalaxyMorphHybrid (actual)
+### v2 — GalaxyMorphHybrid (descartado)
 
-La migración a una arquitectura híbrida **EfficientNet-B0 + Transformer Encoder** resuelve los problemas del ResNet50:
+La migración a una arquitectura híbrida **EfficientNet-B0 + Transformer Encoder** solucionó el overfitting, pero introdujo **Underfitting** severo:
 
-| Problema (v1) | Solución (v2) |
+- **Problema:** El Transformer junto con el `MixUp` regularizó en exceso el modelo. La red no podía asimilar las características geométricas borrosas (brazos espirales débiles) de las galaxias SDSS en el tiempo dado (40 épocas).
+- **Resultado:** Val F1 estancado en **0.5606**. Gran confusión entre galaxias "face-on" (Espirales vs Elípticas vs Barradas).
+- **Lo bueno:** El `WeightedRandomSampler` demostró ser un éxito total descubriendo las galaxias minoritarias (Mergers y Edge-on).
+
+### v3 — Pure Vision ConvNeXt (actual)
+
+Para romper el bloqueo del modelo híbrido, saltamos a la cúspide evolutiva de las CNNs: **ConvNeXt-Tiny**.
+
+| Problema (v2) | Solución (v3) |
 |---------------|---------------|
-| 25.6M params → overfit | **10.9M params** (~57% menos, menos riesgo de memorización) |
-| CNN no ve el contexto global | **Transformer Encoder** relaciona las 49 regiones espaciales de la galaxia entre sí |
-| Sin regularización | Label smoothing + MixUp + Dropout + Weight Decay + Early Stopping |
-| Todos los pesos se entrenan desde epoch 1 | **Two-phase fine-tuning:** backbone congelado primero, descongelado gradual después |
-| Augmentation básica | Augmentation agresiva aprovechando simetría rotacional galáctica |
+| Underfitting por Transformer | **Arquitectura ConvNeXt** con Inductive Bias natural para detectar formas con pocos datos. |
+| CNN clásica no ve el contexto global | ConvNeXt usa **kernels gigantes (7x7)** que emulan la atención global de los Transformers. |
+| Regularización destructiva (MixUp) | **MixUp APAGADO.** El modelo aprende de imágenes puras y limpias. |
+| Convergencia lenta (LR=1e-4) | **Acelerador a fondo (LR=3e-4).** ConvNeXt es sumamente robusto ante LRs agresivos. |
 
-**¿Por qué EfficientNet-B0 y no ResNet50 o EfficientNet-B1?**
-- **vs ResNet50:** EfficientNet-B0 logra mayor precisión con 5.3M params (vs 23.5M del backbone ResNet50) usando compound scaling
-- **vs EfficientNet-B1:** B1 tiene ~7.8M params en el backbone — más VRAM, más lento, y el Transformer ya compensa la capacidad extra
-
-Puedes ver el experimento actual en: [Kaggle v2 — Hybrid CNN+Transformer](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology)
+Puedes ver el experimento actual en: [Kaggle v3 — Pure Vision ConvNeXt](https://www.kaggle.com/code/jeancdevx/pure-vision-convnext-galaxy-morphology)
 
 ---
 
-## ⚙️ Arquitectura del Modelo: GalaxyMorphHybrid
+## ⚙️ Arquitectura del Modelo: ConvNeXt-Tiny Pura
 
-La arquitectura actual es un **modelo híbrido CNN + Transformer** que combina la eficiencia de EfficientNet-B0 para extraer features locales con la capacidad del Transformer Encoder para capturar relaciones espaciales globales entre regiones de la galaxia.
+La arquitectura actual es un modelo puramente convolucional de última generación (**ConvNeXt-Tiny**). Este modelo combina la velocidad y el sesgo inductivo de las CNNs con las macro-arquitecturas modernas de los Vision Transformers.
 
-### ¿Por qué híbrida?
+### Componentes Clave
 
-| Componente | Rol | Por qué |
-|------------|-----|---------|
-| **EfficientNet-B0** (CNN) | Extractor de features locales | Detecta bordes, texturas, patrones de brazos espirales, barras |
-| **Transformer Encoder** | Relaciones espaciales globales | Relaciona tokens de diferentes regiones: "¿el brazo izquierdo se corresponde con el derecho?" |
-| **Combinación** | Lo mejor de ambos | CNN sola no ve el conjunto; Transformer solo sin CNN pierde precisión local |
+| Componente | Rol |
+|------------|-----|
+| **Patchify Stem** | En lugar de convoluciones iniciales complejas, usa una Conv de 4x4 (Stride 4) para cortar la imagen en parches, procesando la imagen mucho más rápido sin perder información estructural. |
+| **Depthwise Convolutions 7x7** | Usa kernels masivos (7x7) que permiten observar enormes porciones de la galaxia a la vez, emulando la atención global. |
+| **Inverted Bottleneck** | Expande canales x4 y los vuelve a comprimir, exactamente igual a las capas Feed-Forward de un Transformer. |
+| **Classification Head** | `LayerNorm` → `Dropout(0.5)` → `Linear(768, 5)`. |
 
-**Ventaja clave sobre ResNet50 anterior:** ~11M parámetros vs ~25.6M. Menos parameters = menos riesgo de memorización (overfitting).
-
-### Flujo de datos
-
-```
-Imagen (3, 224, 224)
-        │
-        ▼
-┌─────────────────────────────────┐
-│   EfficientNet-B0 (backbone)   │  52 capas, pretrained ImageNet
-│   features: (B, 1280, 7, 7)   │  detecta features locales
-└─────────────────────────────────┘
-        │  flatten + transpose
-        ▼
-   Tokens: (B, 49, 1280)        ← 49 regiones de 7×7 de la imagen
-        │  Linear projection
-        ▼
-   Tokens: (B, 49, 512)  + Positional Encoding (learnable)
-        │
-        ▼
-┌─────────────────────────────────┐
-│   Transformer Encoder          │  2 capas, 8 heads, dim=512
-│   Self-Attention global        │  relaciona las 49 regiones entre sí
-└─────────────────────────────────┘
-        │  Global Average Pool (mean over 49 tokens)
-        ▼
-   Vector: (B, 512)
-        │
-        ▼
-┌─────────────────────────────────┐
-│   Classification Head          │  LayerNorm → Dropout(0.5) → Linear(512→5)
-└─────────────────────────────────┘
-        │
-        ▼
-   Logits: (B, 5)  →  softmax  →  clase predicha
-```
-
-### Parámetros
-
-| Componente | Params |
-|------------|--------|
-| EfficientNet-B0 (backbone) | ~5.3M |
-| Projection + Positional Encoding | ~0.7M |
-| Transformer Encoder (2 capas) | ~4.7M |
-| Classification Head | ~0.3M |
-| **Total** | **~10.9M** |
+**Parámetros Totales:** ~28 Millones.
 
 ---
 
-## 🏋️ Estrategia de Entrenamiento
+## 🏋️ Estrategia de Entrenamiento (Flujo "Acelerado")
 
-### Two-Phase Fine-tuning (Gradual Unfreezing)
+### Two-Phase Fine-tuning Simplificado
 
-El entrenamiento se divide en 2 fases para evitar que los gradientes ruidosos del inicio corrompan los pesos pretrained de ImageNet:
+El entrenamiento se divide en 2 fases veloces para adaptar los pesos pretrained de ImageNet a la astronomía:
 
-#### Fase 1 — Backbone Congelado (Epochs 1-10)
-
-```
-Backbone EfficientNet: 🧊 FROZEN (no se actualiza)
-Transformer + Head:    🔥 ENTRENANDO (~6.9M params)
-LR: warmup lineal 3e-5 → 1e-4 → cosine decay
-```
-
-El Transformer aprende a interpretar las features del backbone sin perturbarlo.
-
-#### Fase 2 — Descongelado Parcial (Epochs 11-40)
+#### Fase 1 — Backbone Congelado (Epochs 1-5)
 
 ```
-Backbone (bloques 0-5): 🧊 FROZEN
-Backbone (bloques 6-8): 🔥 LR bajo = 1e-5  (~3.1M extra params)
-Transformer + Head:     🔥 LR normal = 1e-4
-MixUp (alpha=0.2):      activado
+Backbone ConvNeXt: 🧊 FROZEN (no se actualiza)
+Classification Head: 🔥 ENTRENANDO
+LR: warmup lineal → 3e-4
 ```
 
-Solo los últimos 3 bloques del backbone (los más específicos del dominio) se adaptan a galaxias.
+La cabecera aprende a interpretar rápidamente las representaciones puras extraídas por ConvNeXt.
 
-### Regularización Anti-Overfitting
+#### Fase 2 — Descongelado Parcial (Epochs 6-40)
+
+```
+Backbone (Etapas 1 y 2): 🧊 FROZEN
+Backbone (Etapas 3 y 4): 🔥 LR diferencial bajo = 1e-5
+Classification Head:     🔥 LR normal = 3e-4
+MixUp:                   APAGADO (imágenes puras)
+```
+
+### Regularización Segura (Visión Pura)
+
+A diferencia del modelo anterior, hemos quitado la regularización extrema destructiva (MixUp, Blur, Hue) para permitir que la CNN absorba detalles geométricos limpios.
 
 | Técnica | Valor | Propósito |
 |---------|-------|-----------|
 | **Label Smoothing** | 0.1 | Evita confianza excesiva en etiquetas |
 | **Weight Decay** | 1e-3 | L2 regularization en AdamW |
-| **Dropout** | 0.5 (head), 0.3 (transformer) | Apagado aleatorio de neuronas |
-| **MixUp** | α=0.2 (solo Fase 2) | Mezcla imágenes para generalizar |
-| **Grad Clipping** | max_norm=1.0 | Evita gradient explosion |
-| **Early Stopping** | patience=7 | Para cuando Val F1 no mejora |
-
-### Augmentation Agresiva (aprovecha simetría galáctica)
-
-Las galaxias son simétricas rotacionalmente — una espiral girada 90° sigue siendo una espiral:
-
-```python
-RandomResizedCrop(224, scale=(0.5, 1.0))  # zoom variable
-RandomHorizontalFlip(p=0.5)               # espejo horizontal
-RandomVerticalFlip(p=0.5)                 # espejo vertical
-RandomRotation(degrees=180)               # rotación completa
-ColorJitter(brightness, contrast, ...)    # variación de brillo/color
-GaussianBlur(kernel_size=3)              # simula diferentes telescopios
-RandomErasing(p=0.25)                    # oculta regiones aleatorias
-```
+| **Dropout** | 0.5 (head) | Apagado aleatorio de neuronas |
+| **Augmentation Espacial** | Resize(256) + Crop(224) | Invarianza traslacional conservadora |
+| **Rotación Completa** | Flips + Rot(180) | Emula la falta de orientación en el universo |
 
 ### Hiperparámetros
 
@@ -214,12 +158,12 @@ RandomErasing(p=0.25)                    # oculta regiones aleatorias
 |-----------|-------|
 | Batch Size | 128 |
 | Epochs máximos | 40 |
-| Learning Rate (head) | 1e-4 |
+| Learning Rate (head) | 3e-4 |
 | Learning Rate (backbone P2) | 1e-5 |
 | Warmup Epochs | 3 |
 | Optimizer | AdamW |
-| Loss | CrossEntropyLoss (weighted + label smoothing) |
-| Scheduler | Linear warmup → Cosine decay |
+| Loss | CrossEntropyLoss |
+| Balanceador | WeightedRandomSampler |
 
 ---
 
@@ -235,12 +179,13 @@ docker compose run --rm app bash
 
 ### 2. Entrenamiento en Kaggle (2× GPU T4)
 
-El entrenamiento real se realiza en Kaggle. Hay dos notebooks en la historia del proyecto:
+El entrenamiento real se realiza en Kaggle. Hay tres notebooks en la historia del proyecto:
 
 | Notebook | Modelo | Estado |
 |----------|--------|--------|
-| [v1 — ResNet50](https://www.kaggle.com/code/jeancdevx/galaxymorph-cnn-for-classifying-galaxy-morphology) | ResNet50 tradicional | ⚠️ Descartado (overfit epoch 25) |
-| [v2 — Hybrid CNN+Transformer](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology) | EfficientNet-B0 + Transformer Encoder | ✅ Actual |
+| [v1 — ResNet50](https://www.kaggle.com/code/jeancdevx/galaxymorph-cnn-for-classifying-galaxy-morphology) | ResNet50 tradicional | ⚠️ Descartado (overfit) |
+| [v2 — Hybrid CNN+Transformer](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology) | EfficientNet-B0 + Transformer | ⚠️ Descartado (underfit) |
+| [v3 — Pure Vision ConvNeXt](https://www.kaggle.com/code/jeancdevx/pure-vision-convnext-galaxy-morphology) | ConvNeXt-Tiny | ✅ Actual |
 
 La notebook activa es self-contained — no depende de archivos `src/` externos.
 
@@ -259,7 +204,8 @@ Configuración Kaggle:
 galaxy-morph-ml/
 ├── notebooks/
 │   ├── galaxymorph-cnn-for-classifying-galaxy-morphology.ipynb  ← v1 ResNet50 (legacy)
-│   └── hybrid-cnn-transformer-for-galaxy-morphology.ipynb       ← v2 Hybrid (actual)
+│   ├── hybrid-cnn-transformer-for-galaxy-morphology.ipynb       ← v2 Hybrid (legacy)
+│   └── pure-vision-convnext-galaxy-morphology.ipynb             ← v3 ConvNeXt (actual)
 ├── src/
 │   ├── data/
 │   │   └── build_dataset.py       ← Construcción del manifest CSV
@@ -291,12 +237,13 @@ galaxy-morph-ml/
 
 ## 📈 Resultados
 
-> ⚠️ Entrenamiento en curso con la nueva arquitectura híbrida. Los resultados se actualizarán al finalizar.
+> ⚠️ Entrenando la versión v3 (ConvNeXt-Tiny). Los resultados se actualizarán al finalizar.
 
 | Modelo | Val F1 (macro) | Val Accuracy | Params | Estado |
 |--------|---------------|--------------|--------|--------|
-| ResNet50 (baseline) | 0.6939 | ~0.71 | 25.6M | Overfit severo (epoch 25+) |
-| **GalaxyMorphHybrid** | _en curso_ | _en curso_ | 10.9M | ✅ En entrenamiento |
+| v1: ResNet50 | 0.6939 | ~0.71 | 25.6M | Overfit severo |
+| v2: GalaxyMorphHybrid | 0.5606 | 0.5961 | 8.2M | Underfit (MixUp excesivo) |
+| **v3: ConvNeXt-Tiny** | _en curso_ | _en curso_ | ~28.0M | ✅ En entrenamiento |
 
 ---
 
