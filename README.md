@@ -83,6 +83,8 @@ La migración a una arquitectura híbrida **EfficientNet-B0 + Transformer Encode
 - **Resultado:** Val F1 estancado en **0.5606**. Gran confusión entre galaxias "face-on" (Espirales vs Elípticas vs Barradas).
 - **Lo bueno:** El `WeightedRandomSampler` demostró ser un éxito total descubriendo las galaxias minoritarias (Mergers y Edge-on).
 
+Puedes ver el experimento original en: [Kaggle v2 — EfficientNet-B0 + Transformer](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology)
+
 ### v3 — Pure Vision ConvNeXt (actual)
 
 Para romper el bloqueo del modelo híbrido, saltamos a la cúspide evolutiva de las CNNs: **ConvNeXt-Tiny**.
@@ -94,7 +96,7 @@ Para romper el bloqueo del modelo híbrido, saltamos a la cúspide evolutiva de 
 | Regularización destructiva (MixUp) | **MixUp APAGADO.** El modelo aprende de imágenes puras y limpias. |
 | Convergencia lenta (LR=1e-4) | **Acelerador a fondo (LR=3e-4).** ConvNeXt es sumamente robusto ante LRs agresivos. |
 
-Puedes ver el experimento actual en: [Kaggle v3 — Pure Vision ConvNeXt](https://www.kaggle.com/code/jeancdevx/pure-vision-convnext-galaxy-morphology)
+Puedes ver el experimento actual en: [Kaggle v3 — Pure Vision ConvNeXt](https://www.kaggle.com/code/jeancdevx/pure-vision-convnext-for-galaxy-morphology)
 
 ---
 
