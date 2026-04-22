@@ -187,7 +187,7 @@ El entrenamiento real se realiza en Kaggle. Hay tres notebooks en la historia de
 |----------|--------|--------|
 | [v1 — ResNet50](https://www.kaggle.com/code/jeancdevx/galaxymorph-cnn-for-classifying-galaxy-morphology) | ResNet50 tradicional | ⚠️ Descartado (overfit) |
 | [v2 — Hybrid CNN+Transformer](https://www.kaggle.com/code/jeancdevx/hybrid-cnn-transformer-for-galaxy-morphology) | EfficientNet-B0 + Transformer | ⚠️ Descartado (underfit) |
-| [v3 — Pure Vision ConvNeXt](https://www.kaggle.com/code/jeancdevx/pure-vision-convnext-galaxy-morphology) | ConvNeXt-Tiny | ✅ Actual |
+| [v3 — Pure Vision ConvNeXt](https://www.kaggle.com/code/jeancdevx/pure-vision-convnext-for-galaxy-morphology) | ConvNeXt-Tiny | ✅ Actual |
 
 La notebook activa es self-contained — no depende de archivos `src/` externos.
 
