@@ -12,30 +12,6 @@
 | **Output** | (B, 5) logits |
 | **Clases** | Elliptical, Spiral, Barred_Spiral, Edge_on, Irregular_Merger |
 
----
-
-## Pipeline Completo
-
-```mermaid
-flowchart TD
-    A["🔭 Imagen Cruda<br/>424×424 RGB JPG"] --> B["📐 Preprocesamiento<br/>(Data Augmentation)"]
-    B --> C["🧠 EfficientNet-B0 Backbone<br/>(Feature Extraction)"]
-    C --> D["🔗 Puente CNN→Transformer<br/>(Reshape + Projection)"]
-    D --> E["⚡ Transformer Encoder<br/>(2 capas, Self-Attention)"]
-    E --> F["🎯 Classification Head<br/>(Pool + Linear)"]
-    F --> G["📊 Output: 5 logits<br/>(Elliptical, Spiral, Barred_Spiral,<br/>Edge_on, Irregular_Merger)"]
-
-    style A fill:#1a1a2e,stroke:#e94560,color:#fff
-    style B fill:#16213e,stroke:#0f3460,color:#fff
-    style C fill:#0f3460,stroke:#533483,color:#fff
-    style D fill:#533483,stroke:#e94560,color:#fff
-    style E fill:#e94560,stroke:#f39c12,color:#fff
-    style F fill:#f39c12,stroke:#2ecc71,color:#000
-    style G fill:#2ecc71,stroke:#1a1a2e,color:#000
-```
-
----
-
 ## 1. Preprocesamiento (Data Augmentation)
 
 ```
