@@ -7,3 +7,7 @@ Pillow>=12.2.0
 
 # 02_dataset_preparation.ipynb
 scikit-learn>=1.8.0
+
+# 03_image_preprocessing.ipynb
+torch>=2.11.0
+torchvision>=0.22.0
