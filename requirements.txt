@@ -1,24 +1,6 @@
-# Data & Scientific Computing
-pandas>=2.0
-numpy>=1.24
-scikit-learn>=1.3
-
-# Image Processing
-Pillow>=10.0
-
-# Visualization
-matplotlib>=3.7
-
-# Configuration & Utils
-PyYAML>=6.0
-python-dotenv>=1.0
-tqdm>=4.65
-
-# Development & Notebooks
-jupyter
-ipython
-notebook
-
-# Code Quality (optional)
-black
-pytest
+# 01_eda.ipynb
+pandas>=3.0.2
+numpy>=2.4.4
+matplotlib>=3.10.9
+seaborn>=0.13.2
+Pillow>=12.2.0
