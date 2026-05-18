@@ -1,7 +1,19 @@
 # GalaxyMorph ML
 
-Clasificacion automatica de morfologia galactica mediante deep learning sobre Galaxy Zoo 2.
-Pipeline completo de investigacion: desde el analisis exploratorio del conjunto de datos hasta la evaluacion comparativa de cuatro arquitecturas de redes neuronales profundas (CNN y Vision Transformers).
+**Analisis y clasificacion de la morfologia galactica utilizando tecnicas de aprendizaje profundo basadas en redes neuronales convolucionales**
+
+---
+
+Universidad Privada Antenor Orrego — Facultad de Ingenieria  
+Programa de Estudio de Ingenieria de Sistemas e Inteligencia Artificial  
+Curso: Inteligencia Artificial — Principios y Tecnicas  
+Docente: Hernan Sagastegui Chigne
+
+**Equipo:** Morales Robles, Jeancarlo — Leon Garcia, Axel Erico — Tarazona Flores, Jose Ricardo
+
+Trujillo, 15 de mayo del 2026
+
+---
 
 ![Dataset Cover](docs/dataset-cover.png)
 
@@ -12,39 +24,53 @@ Pipeline completo de investigacion: desde el analisis exploratorio del conjunto 
 1. [Contexto del proyecto](#1-contexto-del-proyecto)
 2. [Problematica](#2-problematica)
 3. [Fundamento cientifico](#3-fundamento-cientifico)
-4. [Que resolvemos](#4-que-resolvemos)
-5. [Dataset](#5-dataset)
-6. [Pipeline de notebooks](#6-pipeline-de-notebooks)
-7. [Modelos y arquitecturas](#7-modelos-y-arquitecturas)
-8. [Resultados comparativos](#8-resultados-comparativos)
-9. [Estructura del proyecto](#9-estructura-del-proyecto)
-10. [Instalacion y uso](#10-instalacion-y-uso)
-11. [Requisitos de hardware](#11-requisitos-de-hardware)
-12. [Referencias](#12-referencias)
+4. [Objetivos](#4-objetivos)
+5. [Requisitos del sistema](#5-requisitos-del-sistema)
+6. [Que resolvemos](#6-que-resolvemos)
+7. [Dataset](#7-dataset)
+8. [Pipeline de notebooks](#8-pipeline-de-notebooks)
+9. [Modelos y arquitecturas](#9-modelos-y-arquitecturas)
+10. [Resultados comparativos](#10-resultados-comparativos)
+11. [Estructura del proyecto](#11-estructura-del-proyecto)
+12. [Instalacion y uso](#12-instalacion-y-uso)
+13. [Requisitos de hardware](#13-requisitos-de-hardware)
+14. [Referencias](#14-referencias)
 
 ---
 
 ## 1. Contexto del proyecto
 
-La morfologia galactica es uno de los indicadores mas directos de la historia de formacion y evolucion de una galaxia. La clasificacion morfologica tradicional, sistematizada en el esquema de Hubble (1926) y extendida por de Vaucouleurs (1959), distingue entre galaxias elipticas, lenticulares, espirales, espirales barradas, vistas de canto e irregulares. Cada categoria refleja diferencias fundamentales en la dinamica estelar, la historia de fusiones, la tasa de formacion estelar y la distribucion de materia oscura.
+La clasificacion morfologica de galaxias es la piedra angular de la astrofisica extragalactica y la cosmologia observacional moderna. La morfologia de una galaxia no es una caracteristica arbitraria: codifica informacion fisica vital sobre su historia de formacion, la dinamica orbital de sus poblaciones estelares, el contenido de gas interestelar y la evolucion estructural del universo a lo largo del tiempo cosmico. Comprender si una galaxia exhibe brazos espirales ricos en gas donde nacen estrellas jovenes, o si es un elisoide dominado por poblaciones estelares antiguas, permite reconstruir directamente el historial de fusiones, la distribucion de materia oscura y las tasas de formacion estelar a distintos corrimientos al rojo.
 
 ![Hubble-de Vaucouleurs classification scheme](docs/hubble-de-vaucouleurs.png)
 
-Con el advenimiento de los grandes relevamientos astronomicos digitales (SDSS, DES, Euclid, LSST/Vera Rubin Observatory), el volumen de imagenes galacticas ha pasado de miles a decenas de millones de objetos. La inspeccion visual manual, que fue el metodo estandar durante decadas, se ha vuelto operativamente inviable a esta escala. Galaxy Zoo (Lintott et al., 2008) fue la primera iniciativa de ciencia ciudadana en abordar este problema, logrando clasificar mas de 900,000 galaxias mediante el trabajo colectivo de voluntarios. Galaxy Zoo 2 extendio el esquema a morfologias mas detalladas, generando un conjunto de datos con mas de 300,000 objetos y 11 preguntas morfologicas jerarquicas.
+La sistematizacion de las formas galacticas tiene una historia de mas de un siglo. En 1926, Edwin Hubble introdujo el primer esquema clasificatorio formal, conocido como el "Diapason de Hubble", dividiendo las galaxias en elipticas, espirales e irregulares. Gerhard de Vaucouleurs (1959) extendio este modelo asignando un indice numerico continuo (tipo T) que abarca desde galaxias elipticas compactas hasta irregulares, e incorporo subtipos para espirales barradas y estructuras en anillo. Allan Sandage reconocio formalmente las galaxias lenticulares (S0) como clase de transicion. Esta evolucion del esquema taxonomico refleja la naturaleza intrinsecamente continua de la morfologia galactica: las fronteras entre categorias no son discretas sino graduales, lo que convierte la clasificacion en un problema estadisticamente complejo.
+
+Con la llegada de los grandes relevamientos digitales, el volumen de imagenes galacticas ha crecido de forma exponencial. El telescopio espacial Euclid, lanzado en 2023, fotografio 1.2 millones de galaxias en su primer ano de operaciones; en una sola liberacion anticipada de datos presento 380,000 galaxias capturadas en apenas 63 grados cuadrados del cielo. El Observatorio Vera C. Rubin (LSST) producira 10 terabytes de datos crudos cada noche, generara 10 millones de alertas transitorias diarias y consolidara, a lo largo de sus 10 años de operacion, una base de datos de 15 petabytes con 20,000 millones de galaxias catalogadas. A esta escala, la clasificacion visual humana es matematicamente inviable.
 
 ---
 
 ## 2. Problematica
 
+### 2.1. El cuello de botella clasificatorio
+
+La astrofisica profesional es una disciplina academica con un pool de talento muy reducido en comparacion con la escala del cosmos que pretende analizar. La Union Astronomica Internacional registra aproximadamente 200,000 investigadores activos en todo el mundo. El proyecto Galaxy Zoo demostro empiricamente el limite de la fuerza bruta humana: 80,000 voluntarios necesitaron tres años de esfuerzo colaborativo continuo para obtener clasificaciones morfologicas estadisticamente confiables de apenas 300,000 galaxias. Al ritmo de Galaxy Zoo, clasificar los catalogos del LSST tomaria decenas de miles de años.
+
+Si el LSST arrojara 20,000 millones de galaxias, cada uno de los 200,000 astronomos del planeta tendria que clasificar manualmente 100,000 imagenes. Incluso dedicando 24 horas al dia sin descanso, el tiempo requerido superaria con creces la duracion de la carrera academica de cualquier individuo.
+
+### 2.2. Desafios tecnicos de la clasificacion automatica
+
 La clasificacion automatica de morfologia galactica presenta desafios especificos que la distinguen de la clasificacion de imagenes naturales convencional:
 
-**Desbalance de clases severo.** La distribucion de morfologias en el universo no es uniforme. Las galaxias elipticas y espirales son significativamente mas frecuentes que las lenticulares o irregulares. En este dataset, las clases minoritarias (Irregular) tienen hasta 4.2x menos representacion que las mayoritarias, lo que sesga los clasificadores hacia las clases dominantes.
+**Desbalance de clases severo.** La distribucion de morfologias en el universo no es uniforme. Las galaxias elipticas y espirales son significativamente mas frecuentes que las lenticulares o irregulares. En el dataset de este proyecto, la clase minoritaria (Irregular) tiene 4.2x menos representacion que las clases mayoritarias, sesgando los clasificadores hacia las clases dominantes si no se aplica correccion.
 
-**Ambiguedad en la frontera E/S0.** La transicion entre galaxias elipticas (E) y lenticulares (S0) es intrinsecamente continua. Incluso clasificadores humanos entrenados presentan desacuerdo en esta frontera, especialmente a inclinaciones intermedias y en imagenes de baja relacion senal-ruido.
+**Ambiguedad en la frontera E/S0.** La transicion entre galaxias elipticas (E) y lenticulares (S0) es intrinsecamente continua. Incluso clasificadores humaños entrenados presentan desacuerdo en esta frontera, especialmente a inclinaciones intermedias y en imagenes de baja relacion senal-ruido. Esta ambiguedad es un limite fisico del problema, no un defecto del metodo de clasificacion.
 
-**Invariancia a la orientacion y escala.** Las galaxias no tienen orientacion canonica: una espiral puede aparecer inclinada en cualquier angulo. Las estructuras relevantes (brazos, barra, bulbo) deben reconocerse independientemente de la posicion y escala en la imagen.
+**Sesgo por corrimiento al rojo (redshift).** Las galaxias mas lejanas se ven inherentemente mas pequenas y tenues, provocando que los voluntarios pasen por alto caracteristicas finas (como brazos espirales delgados) y las clasifiquen erroneamente como esferas difusas. El catalogo de Hart et al. (2016) corrige este sesgo matematicamente mediante fracciones de voto debiased, simulando como habrian votado los humaños si todas las galaxias estuvieran a una distancia ideal.
 
-**Gradiente de dificultad morfologica.** Clases como Edge_on (galaxia vista de canto) tienen un sello visual muy distintivo (disco fino, banda oscura central) y son faciles de clasificar. Otras como Lenticular o Irregular requieren capturar caracteristicas de escala global (ausencia de brazos, textura irregular) que son mas dificiles de codificar en representaciones convolucionales locales.
+**Invariancia a la orientacion y escala.** Las galaxias no tienen orientacion canonica: una espiral puede aparecer inclinada en cualquier angulo. Las estructuras relevantes (brazos, barra, bulbo) deben reconocerse independientemente de la posicion y escala en la imagen. La orientacion afecta adicionalmente la interpretacion: una galaxia espiral vista de canto es indistinguible morfologicamente de una lenticular sin informacion espectroscopica complementaria.
+
+**Gradiente de dificultad morfologica.** Clases como Edge_on tienen un sello visual inequivoco (disco fino, banda oscura central) y son faciles de clasificar con alta precision. Otras como Lenticular o Irregular requieren capturar caracteristicas de escala global (ausencia de brazos, textura irregular, asimetria) que son inherentemente mas dificiles de codificar.
 
 ---
 
@@ -52,20 +78,70 @@ La clasificacion automatica de morfologia galactica presenta desafios especifico
 
 El esquema de clasificacion empleado en este proyecto sigue la secuencia de Hubble-de Vaucouleurs, con seis categorias derivadas del arbol de decision morfologico de Galaxy Zoo 2:
 
-| Indice | Clase         | Descripcion morfologica                                                                                                                                 |
-| ------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0      | Elliptical    | Perfil de brillo suave tipo de Vaucouleurs (n~4), sin estructura de disco, sin brazos ni barra. Rotacion dominada por dispersion de velocidades         |
-| 1      | Lenticular    | Disco con abultamiento central (bulbo), sin brazos espirales detectables. Transicion dinamica entre elipticas y espirales                               |
-| 2      | Spiral        | Brazos espirales bien definidos, disco dominante, sin barra central evidente                                                                            |
-| 3      | Barred_Spiral | Estructura de barra central con brazos espirales que emergen de sus extremos                                                                            |
-| 4      | Edge_on       | Galaxia de disco vista de canto (~90 deg de inclinacion). El disco delgado y el abultamiento central son visibles, pero los brazos no son distinguibles |
-| 5      | Irregular     | Morfologia perturbada, asimetrica o en interaccion. No encaja en ninguna categoria del diagrama de Hubble                                               |
+| Indice | Clase         | Descripcion morfologica                                                                                                                                                         |
+| ------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0      | Elliptical    | Perfil de brillo suave tipo de Vaucouleurs (n~4), sin estructura de disco, sin brazos ni barra. Rotacion dominada por dispersion de velocidades. Poblaciones estelares antiguas |
+| 1      | Lenticular    | Disco con abultamiento central (bulbo), sin brazos espirales detectables. Transicion dinamica entre elipticas y espirales. Poco gas interestelar                                |
+| 2      | Spiral        | Brazos espirales bien definidos con formacion estelar activa, disco dominante, sin barra central evidente                                                                       |
+| 3      | Barred_Spiral | Estructura de barra central con brazos espirales que emergen de sus extremos. La barra es una concentracion lineal de estrellas que atraviesa el nucleo                         |
+| 4      | Edge_on       | Galaxia de disco vista de canto (~90 grados de inclinacion). El disco delgado y el abultamiento central son visibles, pero la presencia o ausencia de brazos no es distinguible |
+| 5      | Irregular     | Morfologia perturbada, asimetrica o en interaccion. No encaja en ninguna categoria del diagrama de Hubble. Frecuentemente resultado de fusiones o mareas gravitacionales        |
 
-Las etiquetas se derivan aplicando el arbol de decision de Galaxy Zoo 2 con un umbral de confianza de 0.6 sobre las fracciones de voto debiased. Las clases con fracciones de voto por debajo del umbral en todas las ramas se excluyen del conjunto final para garantizar la calidad de las etiquetas.
+Las etiquetas se derivan aplicando el arbol de decision jerarquico de Galaxy Zoo 2 con un umbral de confianza de 0.6 sobre las fracciones de voto debiased (Hart et al., 2016). Una galaxia recibe una etiqueta morfologica unicamente si al menos el 60% de los voluntarios respondieron coherentemente en la misma direccion del arbol de decision. Las galaxias con votos repartidos difusamente entre multiples opciones se excluyen del conjunto final como casos de ambiguedad intrinseca.
 
 ---
 
-## 4. Que resolvemos
+## 4. Objetivos
+
+### 4.1. Objetivo general
+
+Disenar e implementar un sistema de clasificacion automatica de morfologia galactica basado en redes neuronales convolucionales (CNN) y Vision Transformers, capaz de procesar de forma masiva y reproducible los catalogos astronomicos modernos con una precision comparable al consenso humano experto, evaluando y comparando multiples arquitecturas de aprendizaje profundo bajo condiciones identicas de entrenamiento y evaluacion.
+
+### 4.2. Objetivos especificos
+
+**Construccion y curacion del dataset.** Consolidar un dataset astronomico etiquetado y balanceado a partir del catalogo Galaxy Zoo 2, aplicando umbralización de confianza (theta >= 0.6), correccion del sesgo por redshift y particion estratificada en subconjuntos de entrenamiento, validacion y prueba.
+
+**Diseno del pipeline de preprocesamiento.** Desarrollar un flujo de normalizacion de imagenes que corrija ruido luminico, artefactos instrumentales y desequilibrio de clases, garantizando la calidad y reproducibilidad de los datos de entrada al modelo.
+
+**Implementacion de arquitecturas de aprendizaje profundo.** Implementar, configurar y entrenar cuatro arquitecturas (EfficientNet-B3, ResNet-50, Swin-S y MaxViT-T) adaptadas a la clasificacion de imagenes astronomicas, con tecnicas de aumento de datos y fine-tuning diferencial desde pesos preentrenados en ImageNet.
+
+**Evaluacion y validacion comparativa.** Comparar el rendimiento de las arquitecturas implementadas mediante metricas de clasificacion (F1-macro, precision y recall por clase), determinando el modelo con mayor capacidad de generalizacion ante datos no vistos y analizando la relacion entre rendimiento y costo computacional.
+
+---
+
+## 5. Requisitos del sistema
+
+### 5.1. Requisitos funcionales
+
+| ID    | Requisito                                                                                                                                        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RF-01 | El sistema debe aceptar como entrada imagenes JPEG de galaxias de 424x424 pixeles                                                                |
+| RF-02 | El sistema debe clasificar cada imagen en una de seis categorias morfologicas: Elliptical, Lenticular, Spiral, Barred_Spiral, Edge_on, Irregular |
+| RF-03 | El sistema debe generar una probabilidad de pertenencia por clase para cada imagen analizada (vector de logits softmax)                          |
+| RF-04 | El sistema debe poder procesar multiples imagenes en modo batch para inferencia eficiente                                                        |
+| RF-05 | El sistema debe producir reportes de metricas de evaluacion: F1-macro, matriz de confusion, precision y recall por clase                         |
+
+### 5.2. Requisitos no funcionales
+
+| ID     | Categoria        | Requisito                                                                                                          |
+| ------ | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| RNF-01 | Precision        | El modelo debe alcanzar un F1-macro >= 0.75 sobre el conjunto de prueba                                            |
+| RNF-02 | Escalabilidad    | El sistema debe ser capaz de procesar al menos una imagen por segundo en fase de inferencia sobre hardware con GPU |
+| RNF-03 | Reproducibilidad | El pipeline de preprocesamiento y particion del dataset debe ser completamente determinista (semilla fija)         |
+| RNF-04 | Trazabilidad     | Cada muestra debe ser identificable hasta su fuente original mediante el identificador SDSS (dr7objid)             |
+
+### 5.3. Requisitos de datos
+
+| ID    | Requisito                                                                                                             |
+| ----- | --------------------------------------------------------------------------------------------------------------------- |
+| RD-01 | Dataset fuente: Galaxy Zoo 2 (catalogo de Hart et al., 2016), con imagenes del SDSS DR7                               |
+| RD-02 | Minimo de muestras por clase segun disponibilidad del catalogo (clase Irregular: ~5,927 muestras)                     |
+| RD-03 | Umbral de confianza para etiquetado: >= 60% de consenso entre clasificadores humaños sobre fracciones debiased        |
+| RD-04 | Distribucion de particion: 70% entrenamiento / 15% validacion / 15% prueba, con estratificacion por clase morfologica |
+
+---
+
+## 6. Que resolvemos
 
 Este proyecto implementa y evalua un pipeline completo de clasificacion automatica de morfologia galactica con las siguientes contribuciones:
 
@@ -77,9 +153,21 @@ Este proyecto implementa y evalua un pipeline completo de clasificacion automati
 
 ---
 
-## 5. Dataset
+### Paradigma de aprendizaje seleccionado
 
-**Galaxy Zoo 2** es un proyecto de ciencia ciudadana que recogio clasificaciones morfologicas detalladas de ~300,000 galaxias del Sloan Digital Sky Survey (SDSS). Las clasificaciones se generaron mediante votacion de voluntarios a traves de 11 preguntas jerarquicas sobre la morfologia de cada objeto.
+El problema se formaliza como aprendizaje supervisado sobre 111,129 pares etiquetados (imagen, etiqueta_morfologica). Este paradigma fue seleccionado despues de descartar las siguientes alternativas:
+
+**IA simbolica / sistemas expertos.** Un sistema basado en reglas explicitas requereria codificar manualmente las condiciones visuales que distinguen cada morfologia. Esto es inviable por tres razones: (1) la ambiguedad intrinseca de los datos (las fracciones de voto son distribuciones continuas, no etiquetas discretas); (2) la explosion combinatoria del espacio de caracteristicas (orientacion, distancia, brillo superficial, artefactos instrumentales, contaminacion de objetos vecinos); (3) la inconsistencia documentada del criterio humano, cuantificada estadisticamente por Willett et al. (2013) y Hart et al. (2016) mediante el sesgo por redshift.
+
+**Aprendizaje no supervisado.** Los metodos de clustering no garantizan que sus agrupaciones correspondan a las categorias del esquema de Hubble-de Vaucouleurs. Sin supervision, el algoritmo podria agrupar por brillo superficial, tamano angular o relacion senal-ruido en lugar de por morfologia intrinseca.
+
+El aprendizaje supervisado con etiquetas derivadas del consenso humano de Galaxy Zoo es la unica estrategia que optimiza directamente la concordancia con el criterio astronomico experto, permite cuantificar el rendimiento mediante metricas establecidas y escala de forma predecible con el volumen de datos.
+
+---
+
+## 7. Dataset
+
+**Galaxy Zoo 2** es un proyecto de ciencia ciudadana que recogio clasificaciones morfologicas detalladas de ~300,000 galaxias del Sloan Digital Sky Survey (SDSS). Las clasificaciones se generaron mediante votacion de voluntarios a traves de 11 preguntas jerarquicas sobre la morfologia de cada objeto. El catalogo publicado por Hart et al. (2016) aplica una correccion del sesgo por corrimiento al rojo, produciendo fracciones de voto debiased que simulan como habrian votado los clasificadores si todas las galaxias estuvieran a una distancia estandar.
 
 | Propiedad                         | Valor                                              |
 | --------------------------------- | -------------------------------------------------- |
@@ -93,7 +181,22 @@ Este proyecto implementa y evalua un pipeline completo de clasificacion automati
 | Particion test                    | 16,669 (15%)                                       |
 | Estratificacion                   | Si, por clase morfologica                          |
 
-**Distribucion de clases (conjunto etiquetado):**
+### 7.1. Metodologia de etiquetado
+
+Cada galaxia recorre el arbol de decision jerarquico de GZ2. El umbral de confianza theta = 0.6 determina si una fraccion de voto debiased es suficientemente consensuada para propagar la clasificacion al siguiente nivel del arbol. Se aplica el siguiente sistema de prioridad jerarquica:
+
+1. Si la fraccion de voto para "disco" supera theta, la galaxia entra en la rama de espirales o lenticulares.
+2. Dentro de la rama de espirales, se determina si existe barra central (Barred_Spiral vs. Spiral).
+3. Si la fraccion de voto para "forma redondeada" supera theta sin estructura de disco, la galaxia es clasificada como Elliptical.
+4. Las galaxias con inclinacion >60 grados (mayoria de voto para "visto de canto") se asignan a Edge_on independientemente de sus brazos.
+5. Irregular se asigna con la prioridad mas baja: galaxias que ninguna otra rama del arbol reclama con confianza suficiente.
+6. Las galaxias que no superan theta en ninguna rama del arbol se excluyen como casos de ambiguedad intrinseca.
+
+Para evitar que las clases mas frecuentes dominen el entrenamiento y distorsionen las representaciones aprendidas, se aplica un cap suave de 25,000 muestras por clase. Las clases con mas de 25,000 galaxias disponibles (Elliptical, Spiral, Barred_Spiral) se submuestrean mediante muestreo aleatorio estratificado. El resultado es una razon de desbalance residual de 4.2x entre la clase mayoritaria (25,000) y la clase minoritaria (Irregular, ~5,927), que se gestiona durante el entrenamiento mediante pesos de clase en CrossEntropyLoss.
+
+### 7.2. Distribucion de clases
+
+**Distribucion de clases (conjunto etiquetado, post-cap):**
 
 | Clase         | n       | Fraccion | Peso de clase |
 | ------------- | ------- | -------- | ------------- |
@@ -104,13 +207,17 @@ Este proyecto implementa y evalua un pipeline completo de clasificacion automati
 | Edge_on       | ~13,900 | 12.5%    | 1.40          |
 | Irregular     | ~6,200  | 5.6%     | 3.12          |
 
-Los pesos de clase se calculan como la inversa de la frecuencia normalizada y se aplican a la funcion de perdida (CrossEntropyLoss) durante el entrenamiento para compensar el desbalance.
+Los pesos de clase se calculan como la inversa de la frecuencia normalizada respecto a la clase mas frecuente y se aplican a la funcion de perdida (CrossEntropyLoss) durante el entrenamiento. Se prefirio este enfoque sobre el sobremuestreo sintetico de Irregular porque la clase Irregular es intrinsecamente heterogenea: cualquier muestra artificial generada no representaria la variabilidad real de morfologias perturbadas.
+
+### 7.3. Particion y trazabilidad
+
+La particion 70/15/15 se realiza mediante `train_test_split(stratify=morph_label)` para preservar la distribucion de clases en los tres subconjuntos. Los splits se exportan como `train.csv`, `val.csv` y `test.csv` con las columnas `[dr7objid, asset_id, img_filename, morph_label]`, garantizando la trazabilidad de cada muestra hasta su identificador SDSS original (requisito RNF-04). El conjunto de prueba (test set) se mantiene completamente aislado durante todo el proceso de entrenamiento y validacion; solo se utiliza en la evaluacion final del notebook `09_evaluation.ipynb`.
 
 Los archivos del dataset deben colocarse en `data/` siguiendo la estructura indicada en la seccion de instalacion. Las imagenes no se incluyen en este repositorio por su volumen (~12 GB).
 
 ---
 
-## 6. Pipeline de notebooks
+## 8. Pipeline de notebooks
 
 El proyecto se organiza como una secuencia de notebooks Jupyter con responsabilidades separadas. Cada notebook es autocontenido y puede ejecutarse de forma independiente si sus dependencias (checkpoints, splits) estan disponibles.
 
@@ -131,7 +238,7 @@ Todos los notebooks de entrenamiento (04-08) siguen una estructura uniforme de 2
 
 ---
 
-## 7. Modelos y arquitecturas
+## 9. Modelos y arquitecturas
 
 Se entrenaron y compararon cuatro arquitecturas representando distintas familias de modelos para vision por computadora. Todos los modelos parten de pesos preentrenados en ImageNet-1K y se ajustan en dos fases: calentamiento de la cabeza de clasificacion seguido de fine-tuning completo del backbone con learning rate diferencial.
 
@@ -213,7 +320,7 @@ MaxViT (Tu et al., 2022, ECCV) unifica en un unico bloque tres mecanismos: extra
 
 ---
 
-## 8. Resultados comparativos
+## 10. Resultados comparativos
 
 Todos los modelos se evaluan sobre el mismo test set aislado de 16,669 galaxias. La metrica principal es el **F1-macro** (promedio no ponderado del F1 por clase), que es insensible al desbalance y penaliza por igual el bajo rendimiento en clases minoritarias.
 
@@ -262,7 +369,7 @@ La evaluacion comparativa completa, incluyendo matrices de confusion, curvas de 
 
 ---
 
-## 9. Estructura del proyecto
+## 11. Estructura del proyecto
 
 ```
 galaxy-morph-ml/
@@ -324,7 +431,7 @@ Los checkpoints (`models/checkpoints/`) y las imagenes del dataset (`data/images
 
 ---
 
-## 10. Instalacion y uso
+## 12. Instalacion y uso
 
 ### Clonar el repositorio
 
@@ -379,7 +486,7 @@ Cada notebook de entrenamiento detecta automaticamente el ultimo checkpoint disp
 
 ---
 
-## 11. Requisitos de hardware
+## 13. Requisitos de hardware
 
 Los experimentos de este proyecto se ejecutaron en la siguiente configuracion:
 
@@ -397,7 +504,7 @@ El notebook 09 (evaluacion) carga los modelos secuencialmente y libera la VRAM e
 
 ---
 
-## 12. Referencias
+## 14. Referencias
 
 - Tan, M., y Le, Q. V. (2019). _EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks_. ICML 2019. [arXiv:1905.11946](https://arxiv.org/abs/1905.11946)
 
