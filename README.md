@@ -4,17 +4,6 @@
 
 ---
 
-Universidad Privada Antenor Orrego — Facultad de Ingenieria  
-Programa de Estudio de Ingenieria de Sistemas e Inteligencia Artificial  
-Curso: Inteligencia Artificial — Principios y Tecnicas  
-Docente: Hernan Sagastegui Chigne
-
-**Equipo:** Morales Robles, Jeancarlo — Leon Garcia, Axel Erico — Tarazona Flores, Jose Ricardo
-
-Trujillo, 15 de mayo del 2026
-
----
-
 ![Dataset Cover](docs/dataset-cover.png)
 
 ---
