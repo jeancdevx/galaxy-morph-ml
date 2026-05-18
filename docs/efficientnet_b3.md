@@ -1,10 +1,5 @@
 # EfficientNet-B3 — Clasificación de Morfología Galáctica
 
-> **Proyecto:** Galaxy Morph ML  
-> **Dataset:** Galaxy Zoo 2 (GZ2) — 111,129 galaxias, 6 clases  
-> **Hardware de entrenamiento:** NVIDIA RTX 5060 Ti (8 GB VRAM, arquitectura Blackwell GB206)  
-> **Mejor val F1-macro:** **0.6894** (época 16 / 30)
-
 ---
 
 ## Índice
