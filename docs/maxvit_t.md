@@ -667,6 +667,9 @@ La época 18 fue además la primera tras el mejor checkpoint (época 17), con va
 | `models/checkpoints/maxvit_t/epoch_015.pth` | Snapshot época 15                                     |
 | `models/checkpoints/maxvit_t/epoch_020.pth` | Snapshot época 20                                     |
 
+> **Descarga del modelo:** El checkpoint `best.pth` está disponible públicamente en Kaggle:
+> [https://www.kaggle.com/models/jeancdevx/galaxy-morph-maxvit-t](https://www.kaggle.com/models/jeancdevx/galaxy-morph-maxvit-t)
+
 ---
 
 _Generado el 17 de mayo de 2026. Entrenamiento realizado en NVIDIA RTX 5060 Ti (Linux, CUDA 12.8, PyTorch ≥ 2.7)._

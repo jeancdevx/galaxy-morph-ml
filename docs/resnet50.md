@@ -564,3 +564,6 @@ Este efecto fue más pronunciado que en EfficientNet-B3 porque:
 | `logs/resnet50_log.csv`                                       | Historial completo de 19 épocas                       |
 | `logs/resnet50_training_curves.png`                           | Curvas de loss, F1 y LR                               |
 | `logs/resnet50_confusion_matrix.png`                          | Matriz de confusión (test set)                        |
+
+> **Descarga del modelo:** El checkpoint `best.pth` está disponible públicamente en Kaggle:
+> [https://www.kaggle.com/models/jeancdevx/galaxy-morph-resnet50](https://www.kaggle.com/models/jeancdevx/galaxy-morph-resnet50)
