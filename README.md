@@ -459,6 +459,26 @@ data/
   images_gz2/images/   # ~243k archivos .jpg
 ```
 
+### Obtener los modelos preentrenados
+
+Los checkpoints `best.pth` de los cuatro modelos entrenados estan disponibles publicamente en Kaggle:
+
+| Modelo          | Enlace                                                                                              |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| ResNet-50       | [galaxy-morph-resnet50](https://www.kaggle.com/models/jeancdevx/galaxy-morph-resnet50)             |
+| EfficientNet-B3 | [galaxy-morph-efficientnet-b3](https://www.kaggle.com/models/jeancdevx/galaxy-morph-efficientnet-b3) |
+| Swin-S          | [galaxy-morph-swin-s](https://www.kaggle.com/models/jeancdevx/galaxy-morph-swin-s)                 |
+| MaxViT-T        | [galaxy-morph-maxvit-t](https://www.kaggle.com/models/jeancdevx/galaxy-morph-maxvit-t)             |
+
+Descargar cada `best.pth` y colocarlo en el directorio correspondiente dentro de `models/checkpoints/`:
+
+```
+models/checkpoints/resnet50/best.pth
+models/checkpoints/efficientnet_b3/best.pth
+models/checkpoints/swin_s/best.pth
+models/checkpoints/maxvit_t/best.pth
+```
+
 ### Ejecutar el pipeline
 
 Ejecutar los notebooks en orden desde Jupyter:
@@ -467,7 +487,7 @@ Ejecutar los notebooks en orden desde Jupyter:
 jupyter lab
 ```
 
-Los notebooks 01 y 02 deben ejecutarse primero para generar los splits en `data/splits/`. Los notebooks de entrenamiento (04-08) son independientes entre si una vez que los splits existen. El notebook 09 requiere que los checkpoints `best.pth` de los cuatro modelos esten disponibles en `models/checkpoints/`.
+Los notebooks 01 y 02 deben ejecutarse primero para generar los splits en `data/splits/`. Los notebooks de entrenamiento (04-08) son independientes entre si una vez que los splits existen. El notebook 09 requiere que los checkpoints `best.pth` de los cuatro modelos esten disponibles en `models/checkpoints/` (ver seccion [Obtener los modelos preentrenados](#obtener-los-modelos-preentrenados)).
 
 ### Reanudar entrenamiento desde checkpoint
 

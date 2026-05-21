@@ -661,6 +661,9 @@ El entrenamiento se recuperó correctamente en todas las épocas gracias al chec
 | `models/efficientnet_b3/epoch_025.pth` | Snapshot época 25                                     |
 | `models/efficientnet_b3/epoch_030.pth` | Snapshot época 30                                     |
 
+> **Descarga del modelo:** El checkpoint `best.pth` está disponible públicamente en Kaggle:
+> [https://www.kaggle.com/models/jeancdevx/galaxy-morph-efficientnet-b3](https://www.kaggle.com/models/jeancdevx/galaxy-morph-efficientnet-b3)
+
 ---
 
 _Generado el 14 de mayo de 2026. Entrenamiento realizado en NVIDIA RTX 5060 Ti (Windows 11, CUDA 12.8, PyTorch ≥ 2.7)._

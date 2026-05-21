@@ -664,6 +664,9 @@ El entrenamiento se recuperó automáticamente porque PyTorch mantiene el estado
 | `models/checkpoints/swin_s/epoch_025.pth` | Snapshot época 25 (coincide con best.pth)             |
 | `models/checkpoints/swin_s/epoch_030.pth` | Snapshot época 30                                     |
 
+> **Descarga del modelo:** El checkpoint `best.pth` está disponible públicamente en Kaggle:
+> [https://www.kaggle.com/models/jeancdevx/galaxy-morph-swin-s](https://www.kaggle.com/models/jeancdevx/galaxy-morph-swin-s)
+
 ---
 
 _Generado el 17 de mayo de 2026. Entrenamiento realizado en NVIDIA RTX 5060 Ti (Linux, CUDA 12.8, PyTorch ≥ 2.7)._
