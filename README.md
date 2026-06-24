@@ -2,6 +2,18 @@
 
 **Analisis y clasificacion de la morfologia galactica utilizando tecnicas de aprendizaje profundo basadas en redes neuronales convolucionales**
 
+Proyecto academico — Universidad Privada Antenor Orrego (UPAO) · Curso: Inteligencia Artificial Principios y Tecnicas
+
+**Equipo:** Morales Robles Jeancarlo · Leon Garcia Axel Erico · Tarazona Flores Jose Ricardo · Docente: Hernan Sagastegui Chigne
+
+---
+
+## Resumen
+
+GalaxyMorph ML implementa un **experimento comparativo controlado** de cuatro arquitecturas de aprendizaje profundo — **ResNet-50**, **EfficientNet-B3**, **Swin-S** y **MaxViT-T** — para clasificar la morfologia de galaxias del catalogo **Galaxy Zoo 2** en **6 clases**. El dataset final comprende **111,129 imagenes** tras umbralizacion de confianza (theta >= 0.6) y soft cap por clase (25,000). Los cuatro modelos se entrenaron **localmente en GPU NVIDIA RTX 5060 Ti** bajo condiciones identicas de particion, perdida ponderada y criterio de checkpoint; la evaluacion final se realiza sobre un test set aislado de **16,670 galaxias** en `notebooks/09_evaluation.ipynb`.
+
+> **Evolucion del proyecto.** En iteraciones tempranas se exploraron arquitecturas individuales (ResNet-50 basico, hibrido EfficientNet-B0 + Transformer, ConvNeXt-Tiny). El enfoque definitivo —documentado en el informe academico y en este repositorio— es la **comparativa sistematica de las cuatro arquitecturas** anteriores, entrenadas y evaluadas bajo el mismo protocolo experimental.
+
 ---
 
 ![Dataset Cover](docs/dataset-cover.png)
@@ -10,12 +22,13 @@
 
 ## Tabla de contenidos
 
+0. [Resumen](#resumen)
 1. [Contexto del proyecto](#1-contexto-del-proyecto)
 2. [Problematica](#2-problematica)
 3. [Fundamento cientifico](#3-fundamento-cientifico)
 4. [Objetivos](#4-objetivos)
 5. [Requisitos del sistema](#5-requisitos-del-sistema)
-6. [Que resolvemos](#6-que-resolvemos)
+6. [Paradigma de aprendizaje y solucion propuesta](#6-paradigma-de-aprendizaje-y-solucion-propuesta)
 7. [Dataset](#7-dataset)
 8. [Pipeline de notebooks](#8-pipeline-de-notebooks)
 9. [Modelos y arquitecturas](#9-modelos-y-arquitecturas)
@@ -29,43 +42,63 @@
 
 ## 1. Contexto del proyecto
 
-La clasificacion morfologica de galaxias es la piedra angular de la astrofisica extragalactica y la cosmologia observacional moderna. La morfologia de una galaxia no es una caracteristica arbitraria: codifica informacion fisica vital sobre su historia de formacion, la dinamica orbital de sus poblaciones estelares, el contenido de gas interestelar y la evolucion estructural del universo a lo largo del tiempo cosmico. Comprender si una galaxia exhibe brazos espirales ricos en gas donde nacen estrellas jovenes, o si es un elisoide dominado por poblaciones estelares antiguas, permite reconstruir directamente el historial de fusiones, la distribucion de materia oscura y las tasas de formacion estelar a distintos corrimientos al rojo.
+La clasificacion morfologica de galaxias es la piedra angular de la astrofisica extragalactica y la cosmologia observacional moderna. Lejos de ser un ejercicio taxonomico, la morfologia codifica informacion fisica vital sobre la historia de formacion de cada galaxia, la dinamica orbital de sus poblaciones estelares, su contenido de gas interestelar y la evolucion estructural del universo a lo largo del tiempo cosmico. La apariencia visual de una galaxia es el resultado de las relaciones entre materia oscura, materia baryonica y los procesos termodinamicos que operan a escala galactica: comprender si exhibe brazos espirales con formacion estelar activa o un elipsoide dominado por estrellas antiguas permite reconstruir historiales de fusiones, distribucion de materia oscura y tasas de formacion estelar a distintos corrimientos al rojo.
 
 ![Hubble-de Vaucouleurs classification scheme](docs/hubble-de-vaucouleurs.png)
 
-La sistematizacion de las formas galacticas tiene una historia de mas de un siglo. En 1926, Edwin Hubble introdujo el primer esquema clasificatorio formal, conocido como el "Diapason de Hubble", dividiendo las galaxias en elipticas, espirales e irregulares. Gerhard de Vaucouleurs (1959) extendio este modelo asignando un indice numerico continuo (tipo T) que abarca desde galaxias elipticas compactas hasta irregulares, e incorporo subtipos para espirales barradas y estructuras en anillo. Allan Sandage reconocio formalmente las galaxias lenticulares (S0) como clase de transicion. Esta evolucion del esquema taxonomico refleja la naturaleza intrinsecamente continua de la morfologia galactica: las fronteras entre categorias no son discretas sino graduales, lo que convierte la clasificacion en un problema estadisticamente complejo.
+### Historia y evolucion del esquema clasificatorio
 
-Con la llegada de los grandes relevamientos digitales, el volumen de imagenes galacticas ha crecido de forma exponencial. El telescopio espacial Euclid, lanzado en 2023, fotografio 1.2 millones de galaxias en su primer ano de operaciones; en una sola liberacion anticipada de datos presento 380,000 galaxias capturadas en apenas 63 grados cuadrados del cielo. El Observatorio Vera C. Rubin (LSST) producira 10 terabytes de datos crudos cada noche, generara 10 millones de alertas transitorias diarias y consolidara, a lo largo de sus 10 años de operacion, una base de datos de 15 petabytes con 20,000 millones de galaxias catalogadas. A esta escala, la clasificacion visual humana es matematicamente inviable.
+La astrofisica extragalactica nacio cuando se comprendio que el universo se extiende mas alla de la Via Lactea. Con el telescopio y los grandes relevamientos fotograficos, Edwin Hubble (1926) introdujo el primer esquema formal —el "Diapason de Hubble"— dividiendo las galaxias en elipticas, espirales e irregulares. Gerhard de Vaucouleurs (1959) extendio este modelo con el indice continuo de tipo T y subtipos para espirales barradas y estructuras en anillo. Allan Sandage reconocio formalmente las lenticulares (S0) como clase de transicion. Esta evolucion refleja la naturaleza intrinsecamente continua de la morfologia galactica: las fronteras entre categorias son graduales, no discretas.
+
+La forma de una galaxia es un registro de su historia. Las galaxias evolucionan por fusiones y colisiones; cuando dos espirales interactuan, sus orbitas ordenadas se vuelven caoticas y pueden originar elipsoides. Clasificar morfologias —detectar colas de marea, puentes de gas o asimetrias— es el primer paso para cuantificar la dinamica del universo.
+
+### Escala de los relevamientos modernos
+
+La tasa de captura fotografica de galaxias ha superado la capacidad cognitiva humana. El telescopio espacial **Euclid** (ESA, 2023) fotografio 1.2 millones de galaxias en su primer ano; en una sola liberacion anticipada presento 380,000 galaxias en apenas 63 grados cuadrados del cielo (~0.4% del cielo que mapeara hasta 2030). En superficie, el **Observatorio Vera C. Rubin** (LSST, Chile) producira **10 TB de datos crudos por noche**, emitira ~10 millones de alertas transitorias diarias y consolidara, en 10 anos de operacion, una base de datos de **15 petabytes** con **20,000 millones de galaxias** catalogadas. A esta escala, la clasificacion visual humana es matematicamente inviable.
 
 ---
 
 ## 2. Problematica
 
-### 2.1. El cuello de botella clasificatorio
+### 2.1. Problema a resolver
 
-La astrofisica profesional es una disciplina academica con un pool de talento muy reducido en comparacion con la escala del cosmos que pretende analizar. La Union Astronomica Internacional registra aproximadamente 200,000 investigadores activos en todo el mundo. El proyecto Galaxy Zoo demostro empiricamente el limite de la fuerza bruta humana: 80,000 voluntarios necesitaron tres años de esfuerzo colaborativo continuo para obtener clasificaciones morfologicas estadisticamente confiables de apenas 300,000 galaxias. Al ritmo de Galaxy Zoo, clasificar los catalogos del LSST tomaria decenas de miles de años.
+Los telescopios modernos como el LSST generaran catalogos de hasta **20,000 millones de galaxias**, mientras que toda la comunidad astronomica mundial (~200,000 profesionales) tardo **3 anos** en clasificar manualmente apenas **300,000 galaxias** en Galaxy Zoo. Este abismo hace inviable la clasificacion morfologica manual a escala actual.
 
-Si el LSST arrojara 20,000 millones de galaxias, cada uno de los 200,000 astronomos del planeta tendria que clasificar manualmente 100,000 imagenes. Incluso dedicando 24 horas al dia sin descanso, el tiempo requerido superaria con creces la duracion de la carrera academica de cualquier individuo.
+Adicionalmente, el proceso humano introduce **sesgos sistematicos**. El corrimiento al rojo (redshift) cosmologico distorsiona la percepcion visual: las galaxias lejanas se ven mas pequenas y tenues, y los clasificadores pasan por alto brazos espirales finos clasificandolas erroneamente como esferas difusas. El catalogo de Hart et al. (2016) corrige este sesgo mediante fracciones de voto debiased, pero la escala del problema exige automatizacion.
 
-### 2.2. Desafios tecnicos de la clasificacion automatica
+La ausencia de un **sistema automatizado, preciso y escalable** constituye un cuello de botella critico que impide el aprovechamiento cientifico de los datos astronomicos modernos.
 
-La clasificacion automatica de morfologia galactica presenta desafios especificos que la distinguen de la clasificacion de imagenes naturales convencional:
+### 2.2. Demografia y capital humano
 
-**Desbalance de clases severo.** La distribucion de morfologias en el universo no es uniforme. Las galaxias elipticas y espirales son significativamente mas frecuentes que las lenticulares o irregulares. En el dataset de este proyecto, la clase minoritaria (Irregular) tiene 4.2x menos representacion que las clases mayoritarias, sesgando los clasificadores hacia las clases dominantes si no se aplica correccion.
+La astronomia profesional es una disciplina altamente especializada y demograficamente reducida. La Union Astronomica Internacional (IAU) registra ~256,000 miembros en 92 paises; la comunidad activa de investigadores ronda los **200,000 profesionales** — comparable al tamano de un pueblo mediano frente a la escala del cosmos.
 
-**Ambiguedad en la frontera E/S0.** La transicion entre galaxias elipticas (E) y lenticulares (S0) es intrinsecamente continua. Incluso clasificadores humaños entrenados presentan desacuerdo en esta frontera, especialmente a inclinaciones intermedias y en imagenes de baja relacion senal-ruido. Esta ambiguedad es un limite fisico del problema, no un defecto del metodo de clasificacion.
+Si el LSST catalogara 20,000 millones de galaxias, cada astronomo del planeta tendria que evaluar **100,000 imagenes** manualmente. Incluso dedicando 24 horas al dia sin descanso, el tiempo requerido superaria con creces la duracion de una carrera academica.
 
-**Sesgo por corrimiento al rojo (redshift).** Las galaxias mas lejanas se ven inherentemente mas pequenas y tenues, provocando que los voluntarios pasen por alto caracteristicas finas (como brazos espirales delgados) y las clasifiquen erroneamente como esferas difusas. El catalogo de Hart et al. (2016) corrige este sesgo matematicamente mediante fracciones de voto debiased, simulando como habrian votado los humaños si todas las galaxias estuvieran a una distancia ideal.
+**Galaxy Zoo** (2007) demostro el limite de la fuerza bruta humana incluso con ciencia ciudadana: ~80,000 voluntarios clasificaron mas de 10 millones de imagenes en el primer proyecto; GZ2 movilizo a mas de 83,000 voluntarios con ~16 millones de clasificaciones sobre ~300,000 galaxias del SDSS. Aun asi, al ritmo de Galaxy Zoo, clasificar los catalogos del LSST tomaria **decenas de miles de anos**.
 
-**Invariancia a la orientacion y escala.** Las galaxias no tienen orientacion canonica: una espiral puede aparecer inclinada en cualquier angulo. Las estructuras relevantes (brazos, barra, bulbo) deben reconocerse independientemente de la posicion y escala en la imagen. La orientacion afecta adicionalmente la interpretacion: una galaxia espiral vista de canto es indistinguible morfologicamente de una lenticular sin informacion espectroscopica complementaria.
+El costo de clasificacion manual profesional es igualmente prohibitivo: los astronomos especializados requieren doctorado y anos de formacion postdoctoral, con costos salariales elevados para las agencias espaciales e instituciones academicas. En un contexto de presupuestos ajustados —la NASA opero con ~24.4 mil millones de dolares en FY2026, con recortes propuestos a la Division de Astrofisica—, la clasificacion manual a escala de relevamiento no es sostenible.
 
-**Gradiente de dificultad morfologica.** Clases como Edge_on tienen un sello visual inequivoco (disco fino, banda oscura central) y son faciles de clasificar con alta precision. Otras como Lenticular o Irregular requieren capturar caracteristicas de escala global (ausencia de brazos, textura irregular, asimetria) que son inherentemente mas dificiles de codificar.
+### 2.3. Desafios tecnicos de la clasificacion automatica
+
+La clasificacion automatica de morfologia galactica presenta desafios que la distinguen de la vision por computadora convencional:
+
+**Desbalance de clases severo.** La distribucion de morfologias en el universo no es uniforme. En el dataset de este proyecto, tras el soft cap, la clase minoritaria (Irregular, 5,927) tiene **4.2x** menos representacion que las clases mayoritarias (25,000), sesgando los clasificadores si no se aplica correccion.
+
+**Ambiguedad en la frontera E/S0.** La transicion entre elipticas (E) y lenticulares (S0) es intrinsecamente continua. Incluso clasificadores humanos entrenados discrepan en esta frontera. Es un limite fisico del problema, no un defecto del metodo.
+
+**Sesgo por corrimiento al rojo.** Las galaxias distantes pierden detalle morfologico fino. El catalogo Hart et al. (2016) aplica correccion debiased, pero la ambiguedad residual persiste en las fronteras de clase.
+
+**Invariancia a orientacion y escala.** Las galaxias no tienen orientacion canonica; una espiral vista de canto es morfologicamente indistinguible de una lenticular sin informacion espectroscopica complementaria.
+
+**Gradiente de dificultad morfologica.** Edge_on tiene un sello visual inequivoco (disco fino, banda oscura central). Lenticular e Irregular requieren capturar caracteristicas de escala global inherentemente mas dificiles de codificar.
 
 ---
 
 ## 3. Fundamento cientifico
 
-El esquema de clasificacion empleado en este proyecto sigue la secuencia de Hubble-de Vaucouleurs, con seis categorias derivadas del arbol de decision morfologico de Galaxy Zoo 2:
+### 3.1. Esquema taxonomico y clases morfologicas
+
+El esquema de clasificacion empleado sigue la secuencia de **Hubble-de Vaucouleurs**, con seis categorias derivadas del arbol de decision morfologico de Galaxy Zoo 2:
 
 | Indice | Clase         | Descripcion morfologica                                                                                                                                                         |
 | ------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -76,7 +109,19 @@ El esquema de clasificacion empleado en este proyecto sigue la secuencia de Hubb
 | 4      | Edge_on       | Galaxia de disco vista de canto (~90 grados de inclinacion). El disco delgado y el abultamiento central son visibles, pero la presencia o ausencia de brazos no es distinguible |
 | 5      | Irregular     | Morfologia perturbada, asimetrica o en interaccion. No encaja en ninguna categoria del diagrama de Hubble. Frecuentemente resultado de fusiones o mareas gravitacionales        |
 
-Las etiquetas se derivan aplicando el arbol de decision jerarquico de Galaxy Zoo 2 con un umbral de confianza de 0.6 sobre las fracciones de voto debiased (Hart et al., 2016). Una galaxia recibe una etiqueta morfologica unicamente si al menos el 60% de los voluntarios respondieron coherentemente en la misma direccion del arbol de decision. Las galaxias con votos repartidos difusamente entre multiples opciones se excluyen del conjunto final como casos de ambiguedad intrinseca.
+### 3.2. Galaxy Zoo 2 y el catalogo Hart et al. (2016)
+
+**Galaxy Zoo 2** amplio las clasificaciones de su predecesor para ~300,000 galaxias del SDSS, midiendo barras, brazos espirales, inclinacion, bulbos y otras caracteristicas mediante un arbol de decision jerarquico. Mas de 83,000 voluntarios realizaron ~16 millones de clasificaciones.
+
+Las imagenes provienen del **Sloan Digital Sky Survey (SDSS DR7)**: telescopio de 2.5 m en Apache Point, imagenes JPEG de 424x424 px compuestas con filtros fotometricos (u, g, r, i, z). El reto de GZ2, documentado por Willett et al. (2013), fue el sesgo optico del redshift: galaxias lejanas parecen mas difusas y se confunden con elipticas.
+
+Hart et al. (2016) publicaron fracciones de voto **debiased** para ~240,000 galaxias, ajustadas matematicamente para simular como habrian votado los humanos si todas estuvieran a distancia y claridad ideales. Cada galaxia se identifica por su `dr7objid` del SDSS.
+
+### 3.3. Etiquetado y umbral de confianza
+
+Las etiquetas se derivan aplicando el arbol de decision jerarquico de GZ2 con umbral **theta = 0.6** sobre las fracciones debiased: al menos el 60% de los voluntarios deben haber respondido coherentemente en la misma direccion del arbol. Las galaxias con votos difusos se excluyen como `Uncertain`. Los artefactos fotograficos reciben prioridad maxima y se descartan.
+
+El sistema de prioridades jerarquicas asigna reglas morfologicas especificas antes que la etiqueta Irregular (prioridad mas baja), evitando que anomalias locales sobreescriban la morfologia principal.
 
 ---
 
@@ -84,15 +129,15 @@ Las etiquetas se derivan aplicando el arbol de decision jerarquico de Galaxy Zoo
 
 ### 4.1. Objetivo general
 
-Disenar e implementar un sistema de clasificacion automatica de morfologia galactica basado en redes neuronales convolucionales (CNN) y Vision Transformers, capaz de procesar de forma masiva y reproducible los catalogos astronomicos modernos con una precision comparable al consenso humano experto, evaluando y comparando multiples arquitecturas de aprendizaje profundo bajo condiciones identicas de entrenamiento y evaluacion.
+Disenar e implementar un sistema de clasificacion automatica de morfologia galactica basado en **redes neuronales convolucionales (CNN) y Vision Transformers**, capaz de procesar de forma masiva y reproducible los catalogos astronomicos modernos con precision comparable al consenso humano experto, **evaluando y comparando cuatro arquitecturas de aprendizaje profundo** bajo condiciones identicas de entrenamiento y evaluacion.
 
 ### 4.2. Objetivos especificos
 
-**Construccion y curacion del dataset.** Consolidar un dataset astronomico etiquetado y balanceado a partir del catalogo Galaxy Zoo 2, aplicando umbralización de confianza (theta >= 0.6), correccion del sesgo por redshift y particion estratificada en subconjuntos de entrenamiento, validacion y prueba.
+**Construccion y curacion del dataset.** Consolidar un dataset astronomico etiquetado y balanceado a partir del catalogo Galaxy Zoo 2, aplicando umbralizacion de confianza (theta >= 0.6), correccion del sesgo por redshift (fracciones debiased) y particion estratificada en subconjuntos de entrenamiento, validacion y prueba.
 
 **Diseno del pipeline de preprocesamiento.** Desarrollar un flujo de normalizacion de imagenes que corrija ruido luminico, artefactos instrumentales y desequilibrio de clases, garantizando la calidad y reproducibilidad de los datos de entrada al modelo.
 
-**Implementacion de arquitecturas de aprendizaje profundo.** Implementar, configurar y entrenar cuatro arquitecturas (EfficientNet-B3, ResNet-50, Swin-S y MaxViT-T) adaptadas a la clasificacion de imagenes astronomicas, con tecnicas de aumento de datos y fine-tuning diferencial desde pesos preentrenados en ImageNet.
+**Implementacion de arquitecturas de aprendizaje profundo.** Implementar, configurar y entrenar **cuatro arquitecturas** — ResNet-50, EfficientNet-B3, Swin-S y MaxViT-T — adaptadas a la clasificacion de imagenes astronomicas, con tecnicas de aumento de datos y fine-tuning diferencial desde pesos preentrenados en ImageNet.
 
 **Evaluacion y validacion comparativa.** Comparar el rendimiento de las arquitecturas implementadas mediante metricas de clasificacion (F1-macro, precision y recall por clase), determinando el modelo con mayor capacidad de generalizacion ante datos no vistos y analizando la relacion entre rendimiento y costo computacional.
 
@@ -100,7 +145,13 @@ Disenar e implementar un sistema de clasificacion automatica de morfologia galac
 
 ## 5. Requisitos del sistema
 
-### 5.1. Requisitos funcionales
+### 5.1. Definicion del dominio
+
+**Dominio astrofisico.** El sistema trabaja con imagenes fotometricas de galaxias extragalacticas del universo cercano, capturadas en el espectro visible e infrarrojo cercano (SDSS). El sistema taxonomico de referencia es el esquema continuo de Hubble-de Vaucouleurs.
+
+**Dominio computacional.** El sistema opera sobre imagenes digitales de 424x424 pixeles en tres canales RGB. La tarea es una **clasificacion supervisada multiclase** de seis categorias morfologicas. Las tecnicas empleadas pertenecen al aprendizaje profundo: CNN y arquitecturas modernas derivadas (Vision Transformers).
+
+### 5.2. Requisitos funcionales
 
 | ID    | Requisito                                                                                                                                        |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -110,47 +161,80 @@ Disenar e implementar un sistema de clasificacion automatica de morfologia galac
 | RF-04 | El sistema debe poder procesar multiples imagenes en modo batch para inferencia eficiente                                                        |
 | RF-05 | El sistema debe producir reportes de metricas de evaluacion: F1-macro, matriz de confusion, precision y recall por clase                         |
 
-### 5.2. Requisitos no funcionales
+### 5.3. Requisitos no funcionales
 
 | ID     | Categoria        | Requisito                                                                                                          |
 | ------ | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
-| RNF-01 | Precision        | El modelo debe alcanzar un F1-macro >= 0.75 sobre el conjunto de prueba                                            |
+| RNF-01 | Precision        | El modelo debe alcanzar un F1-macro >= 0.75 sobre el conjunto de prueba (objetivo de diseno; ver resultados en seccion 10) |
 | RNF-02 | Escalabilidad    | El sistema debe ser capaz de procesar al menos una imagen por segundo en fase de inferencia sobre hardware con GPU |
-| RNF-03 | Reproducibilidad | El pipeline de preprocesamiento y particion del dataset debe ser completamente determinista (semilla fija)         |
+| RNF-03 | Reproducibilidad | El pipeline de preprocesamiento y particion del dataset debe ser completamente determinista (semilla fija = 42)   |
 | RNF-04 | Trazabilidad     | Cada muestra debe ser identificable hasta su fuente original mediante el identificador SDSS (dr7objid)             |
 
-### 5.3. Requisitos de datos
+### 5.4. Requisitos de datos
 
 | ID    | Requisito                                                                                                             |
 | ----- | --------------------------------------------------------------------------------------------------------------------- |
 | RD-01 | Dataset fuente: Galaxy Zoo 2 (catalogo de Hart et al., 2016), con imagenes del SDSS DR7                               |
-| RD-02 | Minimo de muestras por clase segun disponibilidad del catalogo (clase Irregular: ~5,927 muestras)                     |
-| RD-03 | Umbral de confianza para etiquetado: >= 60% de consenso entre clasificadores humaños sobre fracciones debiased        |
+| RD-02 | Minimo de muestras por clase segun disponibilidad del catalogo (clase Irregular: 5,927 muestras tras soft cap)        |
+| RD-03 | Umbral de confianza para etiquetado: >= 60% de consenso entre clasificadores humanos sobre fracciones debiased        |
 | RD-04 | Distribucion de particion: 70% entrenamiento / 15% validacion / 15% prueba, con estratificacion por clase morfologica |
 
 ---
 
-## 6. Que resolvemos
+## 6. Paradigma de aprendizaje y solucion propuesta
 
-Este proyecto implementa y evalua un pipeline completo de clasificacion automatica de morfologia galactica con las siguientes contribuciones:
+### 6.1. Contribuciones del proyecto
+
+Este proyecto implementa y evalua un pipeline completo de clasificacion automatica de morfologia galactica:
 
 - **Etiquetado sistematico** de 111,129 galaxias del catalogo Galaxy Zoo 2 aplicando el arbol de decision morfologico con umbral de confianza calibrado.
-- **Particion estratificada** reproducible del dataset (70/15/15 entrenamiento/validacion/test) preservando la distribucion de clases.
-- **Comparativa de cuatro arquitecturas** de distintas familias (CNN eficiente, CNN clasica, Vision Transformer jerarquico, Transformer hibrido CNN-atencion), todas entrenadas bajo identicas condiciones de regularizacion, optimizacion y evaluacion.
-- **Infraestructura de entrenamiento reproducible** con AMP (mixed precision), early stopping, checkpointing completo por epoca y reanudacion sin perdida de estado.
-- **Evaluacion cuantitativa** sobre test set aislado con F1-macro, accuracy, matrices de confusion por clase y analisis de eficiencia parametros/rendimiento.
+- **Particion estratificada** reproducible del dataset (70/15/15) preservando la distribucion de clases.
+- **Comparativa de cuatro arquitecturas** (ResNet-50, EfficientNet-B3, Swin-S, MaxViT-T) entrenadas localmente bajo identicas condiciones de regularizacion, optimizacion y evaluacion.
+- **Infraestructura de entrenamiento reproducible** con AMP (mixed precision), early stopping, checkpointing por epoca y reanudacion sin perdida de estado.
+- **Evaluacion cuantitativa** sobre test set aislado con F1-macro, accuracy, matrices de confusion y analisis de eficiencia parametros/rendimiento.
 
----
+### 6.2. El agente inteligente
 
-### Paradigma de aprendizaje seleccionado
+El sistema se modela como un **agente de clasificacion perceptual**: recibe una imagen de galaxia como entrada sensorial y emite una etiqueta morfologica discreta como accion. No planifica secuencias ni razona simbolicamente; transforma una entrada de alta dimensionalidad en una decision categórica mediante una funcion no lineal aprendida (red neuronal profunda). El entorno es estatico, episodico y completamente observable — un escenario de clasificacion supervisada directa.
 
-El problema se formaliza como aprendizaje supervisado sobre 111,129 pares etiquetados (imagen, etiqueta_morfologica). Este paradigma fue seleccionado despues de descartar las siguientes alternativas:
+### 6.3. Descarte de alternativas
 
-**IA simbolica / sistemas expertos.** Un sistema basado en reglas explicitas requereria codificar manualmente las condiciones visuales que distinguen cada morfologia. Esto es inviable por tres razones: (1) la ambiguedad intrinseca de los datos (las fracciones de voto son distribuciones continuas, no etiquetas discretas); (2) la explosion combinatoria del espacio de caracteristicas (orientacion, distancia, brillo superficial, artefactos instrumentales, contaminacion de objetos vecinos); (3) la inconsistencia documentada del criterio humano, cuantificada estadisticamente por Willett et al. (2013) y Hart et al. (2016) mediante el sesgo por redshift.
+**IA simbolica / sistemas expertos.** Un sistema de reglas explicitas requeriria codificar condiciones del tipo «si fraccion de barra > 0.6 y apertura > 45°, clasificar como espiral barrada». Tres obstaculos lo hacen inviable: (1) ambiguedad intrinseca — las fracciones de voto son continuas, no etiquetas discretas; (2) explosion combinatoria del espacio de caracteristicas (orientacion, distancia, brillo, artefactos); (3) inconsistencia del criterio humano documentada por Willett et al. (2013) y Hart et al. (2016).
 
-**Aprendizaje no supervisado.** Los metodos de clustering no garantizan que sus agrupaciones correspondan a las categorias del esquema de Hubble-de Vaucouleurs. Sin supervision, el algoritmo podria agrupar por brillo superficial, tamano angular o relacion senal-ruido en lugar de por morfologia intrinseca.
+**Aprendizaje no supervisado.** Los metodos de clustering no garantizan correspondencia con las categorias de Hubble-de Vaucouleurs; podrian agrupar por brillo o tamano en lugar de morfologia intrinseca.
 
-El aprendizaje supervisado con etiquetas derivadas del consenso humano de Galaxy Zoo es la unica estrategia que optimiza directamente la concordancia con el criterio astronomico experto, permite cuantificar el rendimiento mediante metricas establecidas y escala de forma predecible con el volumen de datos.
+**Aprendizaje por refuerzo.** No existe un entorno interactivo donde el agente modifique el estado del mundo ni recompensas diferidas.
+
+**Machine learning clasico.** SVM, Random Forest o Gradient Boosting requieren extraccion manual de caracteristicas (indice de concentracion C, asimetria A, Gini, elipticidad isofotal), reproduciendo el sesgo humano que el proyecto pretende eliminar. Una imagen 424x424x3 es un vector de 539,328 dimensiones donde los clasificadores clasicos sobre pixeles crudos no son viables.
+
+### 6.4. Aprendizaje profundo supervisado
+
+El problema se formaliza como **aprendizaje supervisado** sobre 111,129 pares (imagen, etiqueta_morfologica) derivados del consenso humano de Galaxy Zoo. Las **redes neuronales convolucionales (CNN)** aprenden representaciones jerarquicas directamente de los pixeles, con tres propiedades clave para imagenes astronomicas:
+
+- **Invariancia a la traslacion:** una espiral se reconoce independientemente de la posicion del nucleo en la imagen.
+- **Jerarquia de representaciones:** capas bajas detectan bordes y texturas; capas profundas integran patrones morfologicos (brazos, barras, bulbos).
+- **Comparticion de parametros:** viabiliza el procesamiento de imagenes de alta resolucion con menor riesgo de sobreajuste.
+
+La literatura respalda esta eleccion: Cheng et al. (2021, 2023) reportan F1 > 0.85 con CNN sobre el Dark Energy Survey; Katsaros et al. (2025) consolidan estos resultados en una revision sistematica.
+
+### 6.5. Transfer learning
+
+Entrenar desde cero requiere millones de imagenes; el conjunto de entrenamiento (77,789 muestras) es insuficiente para arquitecturas de esta escala. Las cuatro arquitecturas se inicializan con pesos **ImageNet-1K** (1.2 M imagenes, 1,000 clases): los detectores de bordes, texturas y gradientes de las capas bajas son representaciones visuales universales transferibles al dominio astronomico.
+
+El fine-tuning reemplaza la cabeza clasificadora (1,000 → 6 salidas) y entrena la red completa: el backbone ajusta sus representaciones al dominio galactico mientras la cabeza aprende las fronteras morfologicas.
+
+### 6.6. Seleccion de las cuatro arquitecturas
+
+Se seleccionaron cuatro arquitecturas que representan paradigmas distintos, manteniendo constante el dataset, el protocolo de entrenamiento y los hiperparametros base:
+
+| Arquitectura    | Paradigma                  | Parametros (~) | Entrada  | Justificacion                                                                 |
+| --------------- | -------------------------- | -------------- | -------- | ----------------------------------------------------------------------------- |
+| ResNet-50       | CNN residual clasica       | 25.6 M         | 224 px   | Baseline historico obligatorio; comparabilidad con la literatura astronomica  |
+| EfficientNet-B3 | CNN de escalado compuesto  | 12.2 M         | 224 px   | Mejor relacion eficiencia/rendimiento por parametro (Cheng et al., 2021)      |
+| Swin-S          | Vision Transformer jerarquico| 49.7 M       | 308 px   | Atencion por ventanas; captura dependencias espaciales de mediano alcance     |
+| MaxViT-T        | Transformer multi-escala   | 30.9 M         | 224 px   | Atencion local + global simultanea; textura fina y forma global del objeto    |
+
+La unica variable independiente del experimento es la **arquitectura**; las diferencias en metricas finales se atribuyen a diferencias arquitectonicas, no a artefactos del entrenamiento.
 
 ---
 
@@ -158,17 +242,27 @@ El aprendizaje supervisado con etiquetas derivadas del consenso humano de Galaxy
 
 **Galaxy Zoo 2** es un proyecto de ciencia ciudadana que recogio clasificaciones morfologicas detalladas de ~300,000 galaxias del Sloan Digital Sky Survey (SDSS). Las clasificaciones se generaron mediante votacion de voluntarios a traves de 11 preguntas jerarquicas sobre la morfologia de cada objeto. El catalogo publicado por Hart et al. (2016) aplica una correccion del sesgo por corrimiento al rojo, produciendo fracciones de voto debiased que simulan como habrian votado los clasificadores si todas las galaxias estuvieran a una distancia estandar.
 
-| Propiedad                         | Valor                                              |
-| --------------------------------- | -------------------------------------------------- |
-| Fuente                            | Galaxy Zoo 2 (Hart et al., 2016)                   |
-| Catalogo base                     | SDSS DR7                                           |
-| Galaxias totales disponibles      | ~243,000 imagenes JPEG (424x424 px, 3 canales RGB) |
-| Galaxias etiquetadas (umbral=0.6) | 111,129                                            |
-| Clases                            | 6                                                  |
-| Particion entrenamiento           | 77,790 (70%)                                       |
-| Particion validacion              | 16,670 (15%)                                       |
-| Particion test                    | 16,669 (15%)                                       |
-| Estratificacion                   | Si, por clase morfologica                          |
+| Propiedad                              | Valor                                              |
+| -------------------------------------- | -------------------------------------------------- |
+| Fuente                                 | Galaxy Zoo 2 (Hart et al., 2016)                   |
+| Catalogo base                          | SDSS DR7                                           |
+| Galaxias en catalogo Hart16            | 239,695                                            |
+| Galaxias con etiqueta valida + imagen  | 169,531 (antes del soft cap)                       |
+| Galaxias tras soft cap (theta=0.6)     | **111,129**                                        |
+| Imagenes JPEG disponibles (Kaggle)     | ~243,000 archivos (424x424 px, 3 canales RGB)      |
+| Clases morfologicas                    | 6                                                  |
+| Particion entrenamiento                | 77,789 (70.0%)                                     |
+| Particion validacion                   | 16,670 (15.0%)                                     |
+| Particion test                         | 16,670 (15.0%)                                     |
+| Estratificacion                        | Si, por clase morfologica                          |
+
+**Pipeline de curacion del dataset** (`notebooks/02_dataset_preparation.ipynb`):
+
+1. Carga del catalogo `gz2_hart16.csv` (239,695 galaxias) y asignacion de etiquetas mediante el arbol de decision GZ2 con umbral theta = 0.6.
+2. Filtrado de galaxias sin imagen en disco o con etiqueta `Uncertain`/`Artifact`.
+3. Cruce con el mapeo `gz2_filename_mapping.csv` (sample `original`) → **169,531** galaxias con etiqueta valida e imagen disponible.
+4. Soft cap de 25,000 muestras por clase sobre las categorias dominantes → **111,129** galaxias en el dataset final.
+5. Particion estratificada 70/15/15 exportada a `data/splits/`.
 
 ### 7.1. Metodologia de etiquetado
 
@@ -187,14 +281,14 @@ Para evitar que las clases mas frecuentes dominen el entrenamiento y distorsione
 
 **Distribucion de clases (conjunto etiquetado, post-cap):**
 
-| Clase         | n       | Fraccion | Peso de clase |
-| ------------- | ------- | -------- | ------------- |
-| Elliptical    | ~27,800 | 25.0%    | 0.74          |
-| Lenticular    | ~18,800 | 16.9%    | 1.09          |
-| Spiral        | ~27,700 | 24.9%    | 0.74          |
-| Barred_Spiral | ~27,700 | 24.9%    | 0.74          |
-| Edge_on       | ~13,900 | 12.5%    | 1.40          |
-| Irregular     | ~6,200  | 5.6%     | 3.12          |
+| Clase         | n      | Fraccion | Peso de clase |
+| ------------- | ------ | -------- | -------------- |
+| Elliptical    | 25,000 | 22.5%    | 0.74           |
+| Spiral        | 25,000 | 22.5%    | 0.74           |
+| Barred_Spiral | 25,000 | 22.5%    | 0.74           |
+| Lenticular    | 16,926 | 15.2%    | 1.09           |
+| Edge_on       | 13,276 | 11.9%    | 1.40           |
+| Irregular     | 5,927  | 5.3%     | 3.12           |
 
 Los pesos de clase se calculan como la inversa de la frecuencia normalizada respecto a la clase mas frecuente y se aplican a la funcion de perdida (CrossEntropyLoss) durante el entrenamiento. Se prefirio este enfoque sobre el sobremuestreo sintetico de Irregular porque la clase Irregular es intrinsecamente heterogenea: cualquier muestra artificial generada no representaria la variabilidad real de morfologias perturbadas.
 
@@ -210,26 +304,34 @@ Los archivos del dataset deben colocarse en `data/` siguiendo la estructura indi
 
 El proyecto se organiza como una secuencia de notebooks Jupyter con responsabilidades separadas. Cada notebook es autocontenido y puede ejecutarse de forma independiente si sus dependencias (checkpoints, splits) estan disponibles.
 
+### Pipeline principal (experimento comparativo)
+
 | #   | Notebook                               | Descripcion                                                                                                                                                        | Estado   |
 | --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
 | 01  | `01_eda.ipynb`                         | Analisis exploratorio: inspeccion del catalogo CSV, mapeo de IDs, inventario de imagenes, arbol de decision morfologico, distribucion de clases, muestras visuales | Completo |
-| 02  | `02_dataset_preparation.ipynb`         | Etiquetado duro (threshold=0.6), cap por clase, particion 70/15/15 estratificada, exportacion de splits CSV a `data/splits/`                                       | Completo |
+| 02  | `02_dataset_preparation.ipynb`         | Etiquetado duro (threshold=0.6), soft cap por clase, particion 70/15/15 estratificada, exportacion de splits CSV a `data/splits/`                                   | Completo |
 | 03  | `03_image_preprocessing.ipynb`         | Definicion de `GalaxyDataset`, pipeline de transforms, DataLoaders, verificacion de pesos de clase                                                                 | Completo |
-| 04  | `04_train_efficientnet_b3.ipynb`       | Entrenamiento de EfficientNet-B3 (version Kaggle, 2xT4)                                                                                                            | Completo |
-| 04L | `04_train_efficientnet_b3_local.ipynb` | Entrenamiento de EfficientNet-B3 (version local, RTX 5060 Ti)                                                                                                      | Completo |
-| 05  | `05_train_resnet50_local.ipynb`        | Entrenamiento de ResNet-50                                                                                                                                         | Completo |
-| 06  | `06_train_swins_local.ipynb`           | Entrenamiento de Swin-S                                                                                                                                            | Completo |
-| 07  | `07_train_swint_local.ipynb`           | Entrenamiento de Swin-T                                                                                                                                            | Completo |
-| 08  | `08_train_maxvit_local.ipynb`          | Entrenamiento de MaxViT-T                                                                                                                                          | Completo |
+| 04L | `04_train_efficientnet_b3_local.ipynb` | Entrenamiento de EfficientNet-B3 (local, RTX 5060 Ti)                                                                                                              | Completo |
+| 05  | `05_train_resnet50_local.ipynb`        | Entrenamiento de ResNet-50 (local)                                                                                                                                 | Completo |
+| 06  | `06_train_swins_local.ipynb`           | Entrenamiento de Swin-S (local)                                                                                                                                     | Completo |
+| 08  | `08_train_maxvit_local.ipynb`          | Entrenamiento de MaxViT-T (local)                                                                                                                                  | Completo |
 | 09  | `09_evaluation.ipynb`                  | Evaluacion comparativa de los 4 modelos sobre test set                                                                                                             | Completo |
 
-Todos los notebooks de entrenamiento (04-08) siguen una estructura uniforme de 27 celdas con secciones estandarizadas: instalacion, imports, configuracion, pipeline de datos, definicion de modelo, infraestructura de entrenamiento, reanudacion desde checkpoint, funciones de entrenamiento/validacion, loop de entrenamiento, curvas de aprendizaje, evaluacion final y resumen.
+### Notebooks complementarios
+
+| #   | Notebook                               | Descripcion                                                                                              | Estado      |
+| --- | -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------- |
+| 04  | `04_train_efficientnet_b3.ipynb`       | Version historica del entrenamiento en Kaggle (2x GPU T4); conservada como referencia                   | Completo    |
+| 07  | `07_train_swint_local.ipynb`           | Exploracion de Swin-T (variante mas ligera); **no forma parte de la comparativa principal**              | Completo    |
+| 10  | `10_finetune_zoobot.ipynb`             | Fine-tuning de Zoobot (ConvNeXt-Nano) preentrenado en Galaxy Zoo; trabajo futuro                        | En progreso |
+
+Los cuatro notebooks de entrenamiento del experimento comparativo (04L, 05, 06, 08) comparten la misma estructura: configuracion, pipeline de datos, definicion de modelo, infraestructura de entrenamiento con AMP y early stopping, reanudacion desde checkpoint, loop de entrenamiento, curvas de aprendizaje y resumen de artefactos.
 
 ---
 
 ## 9. Modelos y arquitecturas
 
-Se entrenaron y compararon cuatro arquitecturas representando distintas familias de modelos para vision por computadora. Todos los modelos parten de pesos preentrenados en ImageNet-1K y se ajustan en dos fases: calentamiento de la cabeza de clasificacion seguido de fine-tuning completo del backbone con learning rate diferencial.
+Se entrenaron y compararon cuatro arquitecturas representando distintas familias de modelos para vision por computadora. Los notebooks de entrenamiento de referencia son `04_train_efficientnet_b3_local.ipynb`, `05_train_resnet50_local.ipynb`, `06_train_swins_local.ipynb` y `08_train_maxvit_local.ipynb`. Todos los modelos parten de pesos preentrenados en ImageNet-1K y se ajustan en dos fases: calentamiento de la cabeza de clasificacion seguido de fine-tuning completo del backbone con learning rate diferencial.
 
 ### EfficientNet-B3
 
@@ -244,8 +346,9 @@ EfficientNet (Tan y Le, 2019) introduce el escalado compuesto: profundidad, anch
 | Pesos preentrenados | EfficientNet_B3_Weights.IMAGENET1K_V1              |
 | IMAGE_SIZE          | 224 px                                             |
 | CROP_SIZE           | 320 px                                             |
-| BATCH_SIZE          | 32                                                 |
+| BATCH_SIZE          | 128                                                |
 | Parametros totales  | ~10.7 M                                            |
+| Early stopping      | No (30 epocas completas)                           |
 | Documentacion       | [docs/efficientnet_b3.md](docs/efficientnet_b3.md) |
 
 ---
@@ -262,9 +365,10 @@ ResNet (He et al., 2016) introdujo las conexiones residuales (skip connections),
 | ------------------- | ------------------------------------ |
 | Pesos preentrenados | ResNet50_Weights.IMAGENET1K_V2       |
 | IMAGE_SIZE          | 224 px                               |
-| CROP_SIZE           | 320 px                               |
-| BATCH_SIZE          | 32                                   |
+| CROP_SIZE           | 280 px                               |
+| BATCH_SIZE          | 128                                  |
 | Parametros totales  | ~23.5 M                              |
+| Early stopping      | Si (patience=5)                      |
 | Documentacion       | [docs/resnet50.md](docs/resnet50.md) |
 
 ---
@@ -284,6 +388,7 @@ Swin Transformer (Liu et al., 2021, ICCV Best Paper) resuelve el coste cuadratic
 | CROP_SIZE           | 380 px                         |
 | BATCH_SIZE          | 32                             |
 | Parametros totales  | ~49.6 M                        |
+| Early stopping      | Si (patience=5)                |
 | Documentacion       | [docs/swins.md](docs/swins.md) |
 
 > Swin-S requiere una resolucion de entrada diferente (308 px en lugar de 224 px) porque su arquitectura jerarquica con ventanas de 7x7 tokens y patch size de 4x4 exige que la resolucion sea divisible por 4x7=28.
@@ -305,18 +410,20 @@ MaxViT (Tu et al., 2022, ECCV) unifica en un unico bloque tres mecanismos: extra
 | CROP_SIZE           | 320 px                               |
 | BATCH_SIZE          | 32                                   |
 | Parametros totales  | ~30.9 M                              |
+| Early stopping      | Si (patience=5)                      |
 | Documentacion       | [docs/maxvit_t.md](docs/maxvit_t.md) |
 
 ---
 
 ## 10. Resultados comparativos
 
-Todos los modelos se evaluan sobre el mismo test set aislado de 16,669 galaxias. La metrica principal es el **F1-macro** (promedio no ponderado del F1 por clase), que es insensible al desbalance y penaliza por igual el bajo rendimiento en clases minoritarias.
+Todos los modelos se evaluan sobre el mismo **test set aislado de 16,670 galaxias** — datos que ningun modelo observo durante entrenamiento ni seleccion de hiperparametros. La metrica principal de comparacion es el **F1-macro en test** (promedio no ponderado del F1 por clase), complementada con accuracy global y recall por clase.
 
 **Configuracion de entrenamiento compartida:**
 
 | Componente               | Valor                                      |
 | ------------------------ | ------------------------------------------ |
+| Entorno                  | Local — NVIDIA RTX 5060 Ti, CUDA 12.8      |
 | Optimizador              | AdamW                                      |
 | Learning rate (cabeza)   | 1e-3                                       |
 | Learning rate (backbone) | 1e-4                                       |
@@ -327,34 +434,44 @@ Todos los modelos se evaluan sobre el mismo test set aislado de 16,669 galaxias.
 | Precision                | AMP float16                                |
 | Epocas maximas           | 30                                         |
 
-**Resultados en validacion (checkpoint seleccionado como best.pth):**
+**Resultados en validacion (criterio de seleccion de `best.pth`):**
 
-| Modelo          | Val F1-macro | Epoca mejor | Epocas totales  | Params  | IMAGE_SIZE |
-| --------------- | ------------ | ----------- | --------------- | ------- | ---------- |
-| Swin-S          | **0.6962**   | 25          | 30 (completo)   | ~49.6 M | 308 px     |
-| MaxViT-T        | 0.6951       | 17          | 22 (early stop) | ~30.9 M | 224 px     |
-| ResNet-50       | 0.6914       | 14          | 19 (early stop) | ~23.5 M | 224 px     |
-| EfficientNet-B3 | 0.6894       | 16          | 30 (completo)   | ~10.7 M | 224 px     |
+| Modelo          | Val F1-macro | Epoca mejor | Epocas totales  | Params  |
+| --------------- | ------------ | ----------- | --------------- | ------- |
+| Swin-S          | **0.6962**   | 25          | 30 (completo)   | ~49.6 M |
+| MaxViT-T        | 0.6951       | 17          | 22 (early stop) | ~30.9 M |
+| ResNet-50       | 0.6914       | 14          | 19 (early stop) | ~23.5 M |
+| EfficientNet-B3 | 0.6894       | 16          | 30 (completo)   | ~10.7 M |
 
-**Rendimiento por clase (recall en test set, mejores checkpoints):**
+**Resultados en test set (evaluacion final, ordenado por Test F1-macro):**
+
+| Modelo          | Val F1 | Test F1 | Test Acc. | Params | T. entrenamiento |
+| --------------- | ------ | ------- | --------- | ------ | ---------------- |
+| MaxViT-T        | 0.6951 | **0.6839** | 0.7130 | ~30.9 M | 6.1 h          |
+| Swin-S          | 0.6962 | 0.6834  | 0.7128    | ~49.6 M | 15.9 h         |
+| EfficientNet-B3 | 0.6894 | 0.6750  | 0.7013    | ~10.7 M | 10.8 h         |
+| ResNet-50       | 0.6914 | 0.6706  | 0.6906    | ~23.5 M | 3.6 h          |
+
+**Recall por clase en test set (mejores checkpoints):**
 
 | Clase         | EfficientNet-B3 | ResNet-50 | Swin-S | MaxViT-T |
 | ------------- | --------------- | --------- | ------ | -------- |
-| Elliptical    | 0.79            | ~0.79     | 0.79   | 0.79     |
-| Lenticular    | 0.49            | ~0.50     | 0.51   | 0.50     |
-| Spiral        | 0.60            | ~0.62     | 0.64   | 0.65     |
-| Barred_Spiral | 0.74            | ~0.75     | 0.76   | 0.78     |
-| Edge_on       | 0.94            | ~0.93     | 0.93   | 0.91     |
-| Irregular     | 0.62            | ~0.57     | 0.56   | 0.55     |
+| Elliptical    | 0.786           | 0.626     | 0.793  | 0.789    |
+| Lenticular    | 0.494           | 0.592     | 0.511  | 0.499    |
+| Spiral        | 0.604           | 0.656     | 0.642  | 0.650    |
+| Barred_Spiral | 0.744           | 0.770     | 0.762  | 0.780    |
+| Edge_on       | 0.944           | 0.921     | 0.928  | 0.910    |
+| Irregular     | 0.622           | 0.539     | 0.562  | 0.546    |
 
 **Observaciones clave:**
 
-- La mejora total de F1-macro entre el modelo mas ligero (EfficientNet-B3, ~10.7 M) y el mas pesado (Swin-S, ~49.6 M) es de solo 0.0068 puntos, lo que indica que el cuello de botella no es la capacidad del modelo sino la dificultad intrinseca del problema (especialmente la frontera E/S0).
-- La clase Lenticular es sistematicamente la mas dificil en todos los modelos (recall <= 0.51). La confusion principal ocurre con Elliptical, ya que ambas clases comparten la ausencia de brazos espirales y el perfil de brillo esferoidalmente simetrico.
-- La clase Edge_on es la mas facil en todos los modelos (recall >= 0.91) gracias a su firma visual inequivoca: disco fino y elongado.
-- EfficientNet-B3 ofrece la mejor relacion F1/parametros del pipeline (~10.7 M frente a ~49.6 M de Swin-S con solo -0.0068 F1).
+- **MaxViT-T** obtiene el mayor Test F1-macro (0.6839) y accuracy (0.7130), a pesar de que Swin-S lideraba en validacion — su atencion multi-escala generaliza mejor a datos no vistos.
+- **EfficientNet-B3** ofrece la mejor relacion rendimiento/parametros: Test F1 de 0.6750 con solo ~10.7 M parametros, ideal para despliegue con restricciones de computo.
+- La brecha entre el mejor y el peor modelo es de solo **0.0133 puntos** de F1-macro en test, mientras el coste computacional varia hasta x4.4 en tiempo de entrenamiento.
+- **Lenticular** es la clase mas dificil (recall <= 0.592): la ambiguedad morfologica con Elliptical es un limite intrinseco del problema, no de la arquitectura.
+- **Edge_on** es la mas robusta en todos los modelos (recall >= 0.91) por su perfil discoidal inequivoco.
 
-La evaluacion comparativa completa, incluyendo matrices de confusion, curvas de entrenamiento y analisis de eficiencia, se realiza en `notebooks/09_evaluation.ipynb`.
+La evaluacion comparativa completa — matrices de confusion, curvas de entrenamiento y analisis de eficiencia — se realiza en `notebooks/09_evaluation.ipynb`.
 
 ---
 
@@ -404,13 +521,14 @@ galaxy-morph-ml/
 |   +-- 01_eda.ipynb
 |   +-- 02_dataset_preparation.ipynb
 |   +-- 03_image_preprocessing.ipynb
-|   +-- 04_train_efficientnet_b3.ipynb
-|   +-- 04_train_efficientnet_b3_local.ipynb
+|   +-- 04_train_efficientnet_b3_local.ipynb   # Experimento comparativo
+|   +-- 04_train_efficientnet_b3.ipynb          # Version historica Kaggle
 |   +-- 05_train_resnet50_local.ipynb
 |   +-- 06_train_swins_local.ipynb
-|   +-- 07_train_swint_local.ipynb
+|   +-- 07_train_swint_local.ipynb              # Complementario (no en comparativa)
 |   +-- 08_train_maxvit_local.ipynb
 |   +-- 09_evaluation.ipynb
+|   +-- 10_finetune_zoobot.ipynb                # Trabajo futuro
 |
 +-- requirements.txt
 +-- README.md
@@ -425,7 +543,7 @@ Los checkpoints (`models/checkpoints/`) y las imagenes del dataset (`data/images
 ### Clonar el repositorio
 
 ```bash
-git clone https://github.com/<usuario>/galaxy-morph-ml.git
+git clone https://github.com/jeancdevx/galaxy-morph-ml.git
 cd galaxy-morph-ml
 ```
 
@@ -459,9 +577,9 @@ data/
   images_gz2/images/   # ~243k archivos .jpg
 ```
 
-### Obtener los modelos preentrenados
+### Obtener los modelos entrenados
 
-Los checkpoints `best.pth` de los cuatro modelos entrenados estan disponibles publicamente en Kaggle:
+Los checkpoints `best.pth` de los cuatro modelos del experimento comparativo estan publicados en **Kaggle Models** para facilitar su descarga y replicacion de la evaluacion. El entrenamiento reportado en el informe se realizo **localmente** en RTX 5060 Ti; Kaggle se utiliza unicamente como canal de distribucion de artefactos.
 
 | Modelo          | Enlace                                                                                              |
 | --------------- | --------------------------------------------------------------------------------------------------- |
@@ -487,7 +605,7 @@ Ejecutar los notebooks en orden desde Jupyter:
 jupyter lab
 ```
 
-Los notebooks 01 y 02 deben ejecutarse primero para generar los splits en `data/splits/`. Los notebooks de entrenamiento (04-08) son independientes entre si una vez que los splits existen. El notebook 09 requiere que los checkpoints `best.pth` de los cuatro modelos esten disponibles en `models/checkpoints/` (ver seccion [Obtener los modelos preentrenados](#obtener-los-modelos-preentrenados)).
+Los notebooks 01 y 02 deben ejecutarse primero para generar los splits en `data/splits/`. Los notebooks de entrenamiento del experimento comparativo (`04_train_efficientnet_b3_local`, `05`, `06`, `08`) son independientes entre si una vez que los splits existen. El notebook `09_evaluation.ipynb` requiere los checkpoints `best.pth` de los cuatro modelos en `models/checkpoints/` (ver seccion [Obtener los modelos entrenados](#obtener-los-modelos-entrenados)).
 
 ### Reanudar entrenamiento desde checkpoint
 
@@ -497,7 +615,7 @@ Cada notebook de entrenamiento detecta automaticamente el ultimo checkpoint disp
 
 ## 13. Requisitos de hardware
 
-Los experimentos de este proyecto se ejecutaron en la siguiente configuracion:
+Los experimentos del **experimento comparativo** (notebooks 04L, 05, 06, 08 y 09) se ejecutaron en la siguiente configuracion local:
 
 | Componente | Especificacion                               |
 | ---------- | -------------------------------------------- |
@@ -507,7 +625,9 @@ Los experimentos de este proyecto se ejecutaron en la siguiente configuracion:
 | PyTorch    | >= 2.7.0                                     |
 | SO         | Linux (Ubuntu 24.04)                         |
 
-Los notebooks de entrenamiento estan diseñados para ejecutarse con AMP (Automatic Mixed Precision, float16), lo que reduce el consumo de VRAM aproximadamente a la mitad. Los BATCH_SIZE configurados (32-64) requieren un minimo de 8 GB de VRAM. Para GPUs con menos de 8 GB, reducir el `BATCH_SIZE` a la mitad.
+> Existe una version historica del entrenamiento de EfficientNet-B3 en Kaggle (`04_train_efficientnet_b3.ipynb`, 2x GPU T4). No forma parte del protocolo experimental documentado en el informe; el entrenamiento de referencia es la version local.
+
+Los notebooks de entrenamiento usan AMP (Automatic Mixed Precision, float16), lo que reduce el consumo de VRAM aproximadamente a la mitad. Los batch sizes configurados (128 para CNN, 32 para Transformers) requieren un minimo de 8–16 GB de VRAM segun la arquitectura. Para GPUs con menos memoria, reducir `BATCH_SIZE` a la mitad.
 
 El notebook 09 (evaluacion) carga los modelos secuencialmente y libera la VRAM entre evaluaciones, por lo que sus requisitos de memoria son equivalentes a un unico modelo de los entrenados.
 
@@ -532,3 +652,7 @@ El notebook 09 (evaluacion) carga los modelos secuencialmente y libera la VRAM e
 - Hubble, E. P. (1926). _Extra-galactic nebulae_. The Astrophysical Journal, 64, 321-369.
 
 - de Vaucouleurs, G. (1959). _Classification and Morphology of External Galaxies_. Handbuch der Physik, 53, 275-310.
+
+- Cheng, T., Guo, X., Shu, X., et al. (2021). _Galaxy Morphology Classification with Efficient CNNs_. ApJ. [arXiv:2105.07362](https://arxiv.org/abs/2105.07362)
+
+- Katsaros, D., Zacharia, N., Kravariti, S.-D., y Papakostas, D. (2025). _Modern Deep Learning Approaches for Galaxy Morphology Classification_. IAU.
