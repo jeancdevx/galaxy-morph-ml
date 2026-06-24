@@ -50,7 +50,7 @@ La forma de una galaxia es un registro de su historia. Las galaxias evolucionan 
 
 ### Escala de los relevamientos modernos
 
-La tasa de captura fotografica de galaxias ha superado la capacidad cognitiva humana. El telescopio espacial **Euclid** (ESA, 2023) fotografio 1.2 millones de galaxias en su primer ano; en una sola liberacion anticipada presento 380,000 galaxias en apenas 63 grados cuadrados del cielo (~0.4% del cielo que mapeara hasta 2030). En superficie, el **Observatorio Vera C. Rubin** (LSST, Chile) producira **10 TB de datos crudos por noche**, emitira ~10 millones de alertas transitorias diarias y consolidara, en 10 anos de operacion, una base de datos de **15 petabytes** con **20,000 millones de galaxias** catalogadas. A esta escala, la clasificacion visual humana es matematicamente inviable.
+La tasa de captura fotografica de galaxias ha superado la capacidad cognitiva humana. El telescopio espacial **Euclid** (ESA, 2023) fotografio 1.2 millones de galaxias en su primer ano; en una sola liberacion anticipada presento 380,000 galaxias en apenas 63 grados cuadrados del cielo (~0.4% del cielo que mapeara hasta 2030). En superficie, el **Observatorio Vera C. Rubin** (LSST, Chile) producira **10 TB de datos crudos por noche**, emitira ~10 millones de alertas transitorias diarias y consolidara, en 10 años de operacion, una base de datos de **15 petabytes** con **20,000 millones de galaxias** catalogadas. A esta escala, la clasificacion visual humana es matematicamente inviable.
 
 ---
 
@@ -58,7 +58,7 @@ La tasa de captura fotografica de galaxias ha superado la capacidad cognitiva hu
 
 ### 2.1. Problema a resolver
 
-Los telescopios modernos como el LSST generaran catalogos de hasta **20,000 millones de galaxias**, mientras que toda la comunidad astronomica mundial (~200,000 profesionales) tardo **3 anos** en clasificar manualmente apenas **300,000 galaxias** en Galaxy Zoo. Este abismo hace inviable la clasificacion morfologica manual a escala actual.
+Los telescopios modernos como el LSST generaran catalogos de hasta **20,000 millones de galaxias**, mientras que toda la comunidad astronomica mundial (~200,000 profesionales) tardo **3 años** en clasificar manualmente apenas **300,000 galaxias** en Galaxy Zoo. Este abismo hace inviable la clasificacion morfologica manual a escala actual.
 
 Adicionalmente, el proceso humano introduce **sesgos sistematicos**. El corrimiento al rojo (redshift) cosmologico distorsiona la percepcion visual: las galaxias lejanas se ven mas pequenas y tenues, y los clasificadores pasan por alto brazos espirales finos clasificandolas erroneamente como esferas difusas. El catalogo de Hart et al. (2016) corrige este sesgo mediante fracciones de voto debiased, pero la escala del problema exige automatizacion.
 
@@ -70,9 +70,9 @@ La astronomia profesional es una disciplina altamente especializada y demografic
 
 Si el LSST catalogara 20,000 millones de galaxias, cada astronomo del planeta tendria que evaluar **100,000 imagenes** manualmente. Incluso dedicando 24 horas al dia sin descanso, el tiempo requerido superaria con creces la duracion de una carrera academica.
 
-**Galaxy Zoo** (2007) demostro el limite de la fuerza bruta humana incluso con ciencia ciudadana: ~80,000 voluntarios clasificaron mas de 10 millones de imagenes en el primer proyecto; GZ2 movilizo a mas de 83,000 voluntarios con ~16 millones de clasificaciones sobre ~300,000 galaxias del SDSS. Aun asi, al ritmo de Galaxy Zoo, clasificar los catalogos del LSST tomaria **decenas de miles de anos**.
+**Galaxy Zoo** (2007) demostro el limite de la fuerza bruta humana incluso con ciencia ciudadana: ~80,000 voluntarios clasificaron mas de 10 millones de imagenes en el primer proyecto; GZ2 movilizo a mas de 83,000 voluntarios con ~16 millones de clasificaciones sobre ~300,000 galaxias del SDSS. Aun asi, al ritmo de Galaxy Zoo, clasificar los catalogos del LSST tomaria **decenas de miles de años**.
 
-El costo de clasificacion manual profesional es igualmente prohibitivo: los astronomos especializados requieren doctorado y anos de formacion postdoctoral, con costos salariales elevados para las agencias espaciales e instituciones academicas. En un contexto de presupuestos ajustados —la NASA opero con ~24.4 mil millones de dolares en FY2026, con recortes propuestos a la Division de Astrofisica—, la clasificacion manual a escala de relevamiento no es sostenible.
+El costo de clasificacion manual profesional es igualmente prohibitivo: los astronomos especializados requieren doctorado y años de formacion postdoctoral, con costos salariales elevados para las agencias espaciales e instituciones academicas. En un contexto de presupuestos ajustados —la NASA opero con ~24.4 mil millones de dolares en FY2026, con recortes propuestos a la Division de Astrofisica—, la clasificacion manual a escala de relevamiento no es sostenible.
 
 ### 2.3. Desafios tecnicos de la clasificacion automatica
 
