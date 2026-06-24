@@ -2,10 +2,6 @@
 
 **Analisis y clasificacion de la morfologia galactica utilizando tecnicas de aprendizaje profundo basadas en redes neuronales convolucionales**
 
-Proyecto academico — Universidad Privada Antenor Orrego (UPAO) · Curso: Inteligencia Artificial Principios y Tecnicas
-
-**Equipo:** Morales Robles Jeancarlo · Leon Garcia Axel Erico · Tarazona Flores Jose Ricardo · Docente: Hernan Sagastegui Chigne
-
 ---
 
 ## Resumen
@@ -163,12 +159,12 @@ Disenar e implementar un sistema de clasificacion automatica de morfologia galac
 
 ### 5.3. Requisitos no funcionales
 
-| ID     | Categoria        | Requisito                                                                                                          |
-| ------ | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| ID     | Categoria        | Requisito                                                                                                                  |
+| ------ | ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | RNF-01 | Precision        | El modelo debe alcanzar un F1-macro >= 0.75 sobre el conjunto de prueba (objetivo de diseno; ver resultados en seccion 10) |
-| RNF-02 | Escalabilidad    | El sistema debe ser capaz de procesar al menos una imagen por segundo en fase de inferencia sobre hardware con GPU |
-| RNF-03 | Reproducibilidad | El pipeline de preprocesamiento y particion del dataset debe ser completamente determinista (semilla fija = 42)   |
-| RNF-04 | Trazabilidad     | Cada muestra debe ser identificable hasta su fuente original mediante el identificador SDSS (dr7objid)             |
+| RNF-02 | Escalabilidad    | El sistema debe ser capaz de procesar al menos una imagen por segundo en fase de inferencia sobre hardware con GPU         |
+| RNF-03 | Reproducibilidad | El pipeline de preprocesamiento y particion del dataset debe ser completamente determinista (semilla fija = 42)            |
+| RNF-04 | Trazabilidad     | Cada muestra debe ser identificable hasta su fuente original mediante el identificador SDSS (dr7objid)                     |
 
 ### 5.4. Requisitos de datos
 
@@ -227,12 +223,12 @@ El fine-tuning reemplaza la cabeza clasificadora (1,000 → 6 salidas) y entrena
 
 Se seleccionaron cuatro arquitecturas que representan paradigmas distintos, manteniendo constante el dataset, el protocolo de entrenamiento y los hiperparametros base:
 
-| Arquitectura    | Paradigma                  | Parametros (~) | Entrada  | Justificacion                                                                 |
-| --------------- | -------------------------- | -------------- | -------- | ----------------------------------------------------------------------------- |
-| ResNet-50       | CNN residual clasica       | 25.6 M         | 224 px   | Baseline historico obligatorio; comparabilidad con la literatura astronomica  |
-| EfficientNet-B3 | CNN de escalado compuesto  | 12.2 M         | 224 px   | Mejor relacion eficiencia/rendimiento por parametro (Cheng et al., 2021)      |
-| Swin-S          | Vision Transformer jerarquico| 49.7 M       | 308 px   | Atencion por ventanas; captura dependencias espaciales de mediano alcance     |
-| MaxViT-T        | Transformer multi-escala   | 30.9 M         | 224 px   | Atencion local + global simultanea; textura fina y forma global del objeto    |
+| Arquitectura    | Paradigma                     | Parametros (~) | Entrada | Justificacion                                                                |
+| --------------- | ----------------------------- | -------------- | ------- | ---------------------------------------------------------------------------- |
+| ResNet-50       | CNN residual clasica          | 25.6 M         | 224 px  | Baseline historico obligatorio; comparabilidad con la literatura astronomica |
+| EfficientNet-B3 | CNN de escalado compuesto     | 12.2 M         | 224 px  | Mejor relacion eficiencia/rendimiento por parametro (Cheng et al., 2021)     |
+| Swin-S          | Vision Transformer jerarquico | 49.7 M         | 308 px  | Atencion por ventanas; captura dependencias espaciales de mediano alcance    |
+| MaxViT-T        | Transformer multi-escala      | 30.9 M         | 224 px  | Atencion local + global simultanea; textura fina y forma global del objeto   |
 
 La unica variable independiente del experimento es la **arquitectura**; las diferencias en metricas finales se atribuyen a diferencias arquitectonicas, no a artefactos del entrenamiento.
 
@@ -242,19 +238,19 @@ La unica variable independiente del experimento es la **arquitectura**; las dife
 
 **Galaxy Zoo 2** es un proyecto de ciencia ciudadana que recogio clasificaciones morfologicas detalladas de ~300,000 galaxias del Sloan Digital Sky Survey (SDSS). Las clasificaciones se generaron mediante votacion de voluntarios a traves de 11 preguntas jerarquicas sobre la morfologia de cada objeto. El catalogo publicado por Hart et al. (2016) aplica una correccion del sesgo por corrimiento al rojo, produciendo fracciones de voto debiased que simulan como habrian votado los clasificadores si todas las galaxias estuvieran a una distancia estandar.
 
-| Propiedad                              | Valor                                              |
-| -------------------------------------- | -------------------------------------------------- |
-| Fuente                                 | Galaxy Zoo 2 (Hart et al., 2016)                   |
-| Catalogo base                          | SDSS DR7                                           |
-| Galaxias en catalogo Hart16            | 239,695                                            |
-| Galaxias con etiqueta valida + imagen  | 169,531 (antes del soft cap)                       |
-| Galaxias tras soft cap (theta=0.6)     | **111,129**                                        |
-| Imagenes JPEG disponibles (Kaggle)     | ~243,000 archivos (424x424 px, 3 canales RGB)      |
-| Clases morfologicas                    | 6                                                  |
-| Particion entrenamiento                | 77,789 (70.0%)                                     |
-| Particion validacion                   | 16,670 (15.0%)                                     |
-| Particion test                         | 16,670 (15.0%)                                     |
-| Estratificacion                        | Si, por clase morfologica                          |
+| Propiedad                             | Valor                                         |
+| ------------------------------------- | --------------------------------------------- |
+| Fuente                                | Galaxy Zoo 2 (Hart et al., 2016)              |
+| Catalogo base                         | SDSS DR7                                      |
+| Galaxias en catalogo Hart16           | 239,695                                       |
+| Galaxias con etiqueta valida + imagen | 169,531 (antes del soft cap)                  |
+| Galaxias tras soft cap (theta=0.6)    | **111,129**                                   |
+| Imagenes JPEG disponibles (Kaggle)    | ~243,000 archivos (424x424 px, 3 canales RGB) |
+| Clases morfologicas                   | 6                                             |
+| Particion entrenamiento               | 77,789 (70.0%)                                |
+| Particion validacion                  | 16,670 (15.0%)                                |
+| Particion test                        | 16,670 (15.0%)                                |
+| Estratificacion                       | Si, por clase morfologica                     |
 
 **Pipeline de curacion del dataset** (`notebooks/02_dataset_preparation.ipynb`):
 
@@ -282,13 +278,13 @@ Para evitar que las clases mas frecuentes dominen el entrenamiento y distorsione
 **Distribucion de clases (conjunto etiquetado, post-cap):**
 
 | Clase         | n      | Fraccion | Peso de clase |
-| ------------- | ------ | -------- | -------------- |
-| Elliptical    | 25,000 | 22.5%    | 0.74           |
-| Spiral        | 25,000 | 22.5%    | 0.74           |
-| Barred_Spiral | 25,000 | 22.5%    | 0.74           |
-| Lenticular    | 16,926 | 15.2%    | 1.09           |
-| Edge_on       | 13,276 | 11.9%    | 1.40           |
-| Irregular     | 5,927  | 5.3%     | 3.12           |
+| ------------- | ------ | -------- | ------------- |
+| Elliptical    | 25,000 | 22.5%    | 0.74          |
+| Spiral        | 25,000 | 22.5%    | 0.74          |
+| Barred_Spiral | 25,000 | 22.5%    | 0.74          |
+| Lenticular    | 16,926 | 15.2%    | 1.09          |
+| Edge_on       | 13,276 | 11.9%    | 1.40          |
+| Irregular     | 5,927  | 5.3%     | 3.12          |
 
 Los pesos de clase se calculan como la inversa de la frecuencia normalizada respecto a la clase mas frecuente y se aplican a la funcion de perdida (CrossEntropyLoss) durante el entrenamiento. Se prefirio este enfoque sobre el sobremuestreo sintetico de Irregular porque la clase Irregular es intrinsecamente heterogenea: cualquier muestra artificial generada no representaria la variabilidad real de morfologias perturbadas.
 
@@ -309,21 +305,21 @@ El proyecto se organiza como una secuencia de notebooks Jupyter con responsabili
 | #   | Notebook                               | Descripcion                                                                                                                                                        | Estado   |
 | --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
 | 01  | `01_eda.ipynb`                         | Analisis exploratorio: inspeccion del catalogo CSV, mapeo de IDs, inventario de imagenes, arbol de decision morfologico, distribucion de clases, muestras visuales | Completo |
-| 02  | `02_dataset_preparation.ipynb`         | Etiquetado duro (threshold=0.6), soft cap por clase, particion 70/15/15 estratificada, exportacion de splits CSV a `data/splits/`                                   | Completo |
+| 02  | `02_dataset_preparation.ipynb`         | Etiquetado duro (threshold=0.6), soft cap por clase, particion 70/15/15 estratificada, exportacion de splits CSV a `data/splits/`                                  | Completo |
 | 03  | `03_image_preprocessing.ipynb`         | Definicion de `GalaxyDataset`, pipeline de transforms, DataLoaders, verificacion de pesos de clase                                                                 | Completo |
 | 04L | `04_train_efficientnet_b3_local.ipynb` | Entrenamiento de EfficientNet-B3 (local, RTX 5060 Ti)                                                                                                              | Completo |
 | 05  | `05_train_resnet50_local.ipynb`        | Entrenamiento de ResNet-50 (local)                                                                                                                                 | Completo |
-| 06  | `06_train_swins_local.ipynb`           | Entrenamiento de Swin-S (local)                                                                                                                                     | Completo |
+| 06  | `06_train_swins_local.ipynb`           | Entrenamiento de Swin-S (local)                                                                                                                                    | Completo |
 | 08  | `08_train_maxvit_local.ipynb`          | Entrenamiento de MaxViT-T (local)                                                                                                                                  | Completo |
 | 09  | `09_evaluation.ipynb`                  | Evaluacion comparativa de los 4 modelos sobre test set                                                                                                             | Completo |
 
 ### Notebooks complementarios
 
-| #   | Notebook                               | Descripcion                                                                                              | Estado      |
-| --- | -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------- |
-| 04  | `04_train_efficientnet_b3.ipynb`       | Version historica del entrenamiento en Kaggle (2x GPU T4); conservada como referencia                   | Completo    |
-| 07  | `07_train_swint_local.ipynb`           | Exploracion de Swin-T (variante mas ligera); **no forma parte de la comparativa principal**              | Completo    |
-| 10  | `10_finetune_zoobot.ipynb`             | Fine-tuning de Zoobot (ConvNeXt-Nano) preentrenado en Galaxy Zoo; trabajo futuro                        | En progreso |
+| #   | Notebook                         | Descripcion                                                                                 | Estado      |
+| --- | -------------------------------- | ------------------------------------------------------------------------------------------- | ----------- |
+| 04  | `04_train_efficientnet_b3.ipynb` | Version historica del entrenamiento en Kaggle (2x GPU T4); conservada como referencia       | Completo    |
+| 07  | `07_train_swint_local.ipynb`     | Exploracion de Swin-T (variante mas ligera); **no forma parte de la comparativa principal** | Completo    |
+| 10  | `10_finetune_zoobot.ipynb`       | Fine-tuning de Zoobot (ConvNeXt-Nano) preentrenado en Galaxy Zoo; trabajo futuro            | En progreso |
 
 Los cuatro notebooks de entrenamiento del experimento comparativo (04L, 05, 06, 08) comparten la misma estructura: configuracion, pipeline de datos, definicion de modelo, infraestructura de entrenamiento con AMP y early stopping, reanudacion desde checkpoint, loop de entrenamiento, curvas de aprendizaje y resumen de artefactos.
 
@@ -445,12 +441,12 @@ Todos los modelos se evaluan sobre el mismo **test set aislado de 16,670 galaxia
 
 **Resultados en test set (evaluacion final, ordenado por Test F1-macro):**
 
-| Modelo          | Val F1 | Test F1 | Test Acc. | Params | T. entrenamiento |
-| --------------- | ------ | ------- | --------- | ------ | ---------------- |
-| MaxViT-T        | 0.6951 | **0.6839** | 0.7130 | ~30.9 M | 6.1 h          |
-| Swin-S          | 0.6962 | 0.6834  | 0.7128    | ~49.6 M | 15.9 h         |
-| EfficientNet-B3 | 0.6894 | 0.6750  | 0.7013    | ~10.7 M | 10.8 h         |
-| ResNet-50       | 0.6914 | 0.6706  | 0.6906    | ~23.5 M | 3.6 h          |
+| Modelo          | Val F1 | Test F1    | Test Acc. | Params  | T. entrenamiento |
+| --------------- | ------ | ---------- | --------- | ------- | ---------------- |
+| MaxViT-T        | 0.6951 | **0.6839** | 0.7130    | ~30.9 M | 6.1 h            |
+| Swin-S          | 0.6962 | 0.6834     | 0.7128    | ~49.6 M | 15.9 h           |
+| EfficientNet-B3 | 0.6894 | 0.6750     | 0.7013    | ~10.7 M | 10.8 h           |
+| ResNet-50       | 0.6914 | 0.6706     | 0.6906    | ~23.5 M | 3.6 h            |
 
 **Recall por clase en test set (mejores checkpoints):**
 
@@ -581,12 +577,12 @@ data/
 
 Los checkpoints `best.pth` de los cuatro modelos del experimento comparativo estan publicados en **Kaggle Models** para facilitar su descarga y replicacion de la evaluacion. El entrenamiento reportado en el informe se realizo **localmente** en RTX 5060 Ti; Kaggle se utiliza unicamente como canal de distribucion de artefactos.
 
-| Modelo          | Enlace                                                                                              |
-| --------------- | --------------------------------------------------------------------------------------------------- |
-| ResNet-50       | [galaxy-morph-resnet50](https://www.kaggle.com/models/jeancdevx/galaxy-morph-resnet50)             |
+| Modelo          | Enlace                                                                                               |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| ResNet-50       | [galaxy-morph-resnet50](https://www.kaggle.com/models/jeancdevx/galaxy-morph-resnet50)               |
 | EfficientNet-B3 | [galaxy-morph-efficientnet-b3](https://www.kaggle.com/models/jeancdevx/galaxy-morph-efficientnet-b3) |
-| Swin-S          | [galaxy-morph-swin-s](https://www.kaggle.com/models/jeancdevx/galaxy-morph-swin-s)                 |
-| MaxViT-T        | [galaxy-morph-maxvit-t](https://www.kaggle.com/models/jeancdevx/galaxy-morph-maxvit-t)             |
+| Swin-S          | [galaxy-morph-swin-s](https://www.kaggle.com/models/jeancdevx/galaxy-morph-swin-s)                   |
+| MaxViT-T        | [galaxy-morph-maxvit-t](https://www.kaggle.com/models/jeancdevx/galaxy-morph-maxvit-t)               |
 
 Descargar cada `best.pth` y colocarlo en el directorio correspondiente dentro de `models/checkpoints/`:
 
